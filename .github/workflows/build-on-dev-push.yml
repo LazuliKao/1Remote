@@ -14,6 +14,8 @@ jobs:
       contents: write # for release-drafter/release-drafter to create a github release
     name: build_and_release
     runs-on: windows-latest
+    if: |
+      !contains(github.event.head_commit.message, 'WIP')
 
     env:
       configuration: Release
@@ -29,16 +31,18 @@ jobs:
           echo "github.ref = ${{ github.ref }}"
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
 
       # Install the .NET Core workload https://github.com/actions/setup-dotnet
       - name: Install .NET Core
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: |
+            6.0.x
+            8.0.x
 
       # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
       - name: Setup MSBuild.exe
@@ -72,6 +76,7 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern "===REPLACE_ME_WITH_APP_CENTER_SECRET===" -Secret ${{ secrets.APP_CENTER_SECRET_1REMOTE }}
+          ./scripts/Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern "===REPLACE_ME_WITH_SENTRY_IO_DEN===" -Secret ${{ secrets.SENTRY_IO_DEN }}
           ./scripts/Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern "===REPLACE_ME_WITH_SALT===" -Secret ${{ secrets.GLOBAL_STRING_ENCRYPTION_SLAT }}
 
       # Get ${{env.BuildVersion}} and ${{env.PreRelease}}
@@ -80,19 +85,19 @@ jobs:
         run: ./scripts/Get-Version.ps1
 
       # echo ${{env.BuildVersion}} and ${{env.PreRelease}}
-      - name: Echo Version
-        shell: pwsh
-        if: ${{env.PreRelease}} != ""
-        run: |
-          echo ${{env.BuildVersion}}
-          echo ${{env.PreRelease}}
+      # - name: Echo Version
+      #   shell: pwsh
+      #   if: ${{env.PreRelease}} != ""
+      #   run: |
+      #     echo ${{env.BuildVersion}}
+      #     echo ${{env.PreRelease}}
 
       ## Publish the application Net4.8
       #- name: Publish the application Net4.8
       #  run: dotnet publish $env:Main_Project -p:PublishProfile=./Ui/Properties/PublishProfiles/x64-net48.pubxml
       #  # run: msbuild $env:Main_Project -t:rebuild -verbosity:diag -property:Configuration=ReleaseNet48
       ## artifact
-      #- uses: actions/upload-artifact@v3
+      #- uses: actions/upload-artifact@v4
       #  with:
       #    name: 1Remote-${{env.BuildVersion}}-net4.8(not recommended)
       #    path: Ui/bin/Release/net4.8-windows/publish
@@ -101,7 +106,7 @@ jobs:
       - name: Publish the application
         run: dotnet publish $env:Main_Project -p:PublishProfile=./Ui/Properties/PublishProfiles/x64-single.file.application.pubxml
       # artifact
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: 1Remote-${{env.BuildVersion}}-net6-x64
           path: Ui/bin/Release/net6.0-windows/publish/win-x64
@@ -134,7 +139,7 @@ jobs:
           submodules: recursive
 
       # download artifact net6.x
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: ${{needs.JobBuild.outputs.artifact_net6x}}
           path: ${{needs.JobBuild.outputs.artifact_net6x}}
@@ -146,7 +151,7 @@ jobs:
           dest: ${{needs.JobBuild.outputs.artifact_net6x}}.zip
 
       ## download artifact net4.8
-      #- uses: actions/download-artifact@v2
+      #- uses: actions/download-artifact@v4.1.7
       #  with:
       #    name: ${{needs.JobBuild.outputs.artifact_net48}}
       #    path: ${{needs.JobBuild.outputs.artifact_net48}}
@@ -192,9 +197,11 @@ jobs:
       #    asset_content_type: application/zip
 
       # set changelogs
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          registry-url: https://registry.npmjs.org/
+          node-version: lts/*
+
       - run: npx changelogithub #--draft #--prerelease # or changelogithub@0.12 if ensure the stable result
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -220,7 +227,7 @@ jobs:
           submodules: recursive
 
       # download artifact net6.x
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: ${{needs.JobBuild.outputs.artifact_net6x}}
           path: ${{needs.JobBuild.outputs.artifact_net6x}}
@@ -232,7 +239,7 @@ jobs:
           dest: ${{needs.JobBuild.outputs.artifact_net6x}}.zip
 
       ## download artifact net4.8
-      #- uses: actions/download-artifact@v2
+      #- uses: actions/download-artifact@v4.1.7
       #  with:
       #    name: ${{needs.JobBuild.outputs.artifact_net48}}
       #    path: ${{needs.JobBuild.outputs.artifact_net48}}
@@ -278,20 +285,21 @@ jobs:
       #    asset_content_type: application/zip
 
       # set changelogs
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          registry-url: https://registry.npmjs.org/
+          node-version: lts/*
+
       - run: npx changelogithub --prerelease #--draft #--prerelease # or changelogithub@0.12 if ensure the stable result
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-  # publish nightly build, run only tag is empty
+  # publish nightly build
   NightlyRelease:
     name: Nightly publish
     runs-on: ubuntu-latest
     needs: JobBuild
     if: |
-      !startsWith(github.ref, 'refs/tags/') &&
       !contains(github.event.head_commit.message, 'WIP')
     steps:
       - name: Echo
@@ -300,7 +308,7 @@ jobs:
           echo ${{needs.JobBuild.outputs.PreRelease}}
 
       # download artifact net6.x
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: ${{needs.JobBuild.outputs.artifact_net6x}}
           path: ${{needs.JobBuild.outputs.artifact_net6x}}

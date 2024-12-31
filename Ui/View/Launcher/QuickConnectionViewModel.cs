@@ -10,18 +10,16 @@ using _1RM.Service;
 using _1RM.Service.Locality;
 using _1RM.Utils;
 using _1RM.View.Editor;
-using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 using Stylet;
+using File = System.IO.File;
 
 namespace _1RM.View.Launcher
 {
     public class QuickConnectionViewModel : NotifyPropertyChangedBaseScreen
     {
-        public readonly QuickConnectionItem OpenConnectActionItem;
-        //private LauncherWindowViewModel _launcherWindowViewModel;
-        public List<ProtocolBaseWithAddressPort> Protocols { get; }
+        public readonly QuickConnectionItem OpenConnectActionItem; // A placeholder for the "Connect" button
+        public List<ProtocolBaseWithAddressPort> Protocols { get; } // A list of protocols that can be used for quick connection
         public QuickConnectionViewModel()
         {
             Protocols = new List<ProtocolBaseWithAddressPort>();
@@ -36,7 +34,7 @@ namespace _1RM.View.Launcher
             }
             _selectedProtocol = Protocols.First(x => x.Protocol == RDP.ProtocolName);
 
-
+            // Placeholder for the "Connect" button
             OpenConnectActionItem = new QuickConnectionItem()
             {
                 Host = IoC.Translate("Connect"),
@@ -52,6 +50,7 @@ namespace _1RM.View.Launcher
             }
         }
 
+        private ProtocolBase? _serverSelectionsViewSelected = null;
         public void Show()
         {
             if (this.View is not QuickConnectionView view) return;
@@ -60,18 +59,26 @@ namespace _1RM.View.Launcher
             IoC.Get<LauncherWindowViewModel>().ServerSelectionsViewVisibility = Visibility.Collapsed;
             RebuildConnectionHistory();
 
-
-            if (IoC.Get<LauncherWindowViewModel>().ServerSelectionsViewModel is { AnyKeyExceptTabPressAfterShow: true, SelectedItem: { DataSource: {IsWritable: true}, Server: {} p}})
+            // clear info
+            Filter = "";
+            if (SelectedProtocol is ProtocolBaseWithAddressPortUserPwd sp)
             {
-                SelectedProtocol = Protocols.FirstOrDefault(x => x.Protocol == p.Protocol) ?? Protocols.First();
-                if (p is ProtocolBaseWithAddressPort pbap)
+                sp.Address = "";
+                sp.UserName = "";
+                sp.Password = "";
+            }
+            _serverSelectionsViewSelected = null;
+
+
+            // if selected server in launcher list, and it is writable, then auto fill the server info into quick connect view
+            if (IoC.Get<LauncherWindowViewModel>().ServerSelectionsViewModel is { AnyKeyExceptTabPressAfterShow: true, SelectedItem: { DataSource: { IsWritable: true }, Server: { } serverSelectionsViewSelected } })
+            {
+                _serverSelectionsViewSelected = serverSelectionsViewSelected;
+                SelectedProtocol = Protocols.FirstOrDefault(x => x.Protocol == _serverSelectionsViewSelected.Protocol) ?? Protocols.First();
+                // fill address and port
+                if (_serverSelectionsViewSelected is ProtocolBaseWithAddressPort pap)
                 {
-                    Filter = pbap.Address + ":" + pbap.Port;
-                }
-                if (p is ProtocolBaseWithAddressPortUserPwd pup && SelectedProtocol is ProtocolBaseWithAddressPortUserPwd pup2)
-                {
-                    pup2.UserName = pup.UserName;
-                    pup2.Password = pup.Password;
+                    Filter = pap.Address + ":" + pap.Port;
                 }
             }
 
@@ -79,7 +86,7 @@ namespace _1RM.View.Launcher
             Execute.OnUIThread(() =>
             {
                 view.TbKeyWord.Focus();
-                view.TbKeyWord.CaretIndex  = view.TbKeyWord.Text.Length;
+                view.TbKeyWord.CaretIndex = view.TbKeyWord.Text.Length;
             });
         }
 
@@ -123,6 +130,11 @@ namespace _1RM.View.Launcher
                     if (this.View is not QuickConnectionView view) return;
                     if (IoC.TryGet<LauncherWindowView>()?.IsClosing != false) return;
                     Execute.OnUIThread(() => { view.ListBoxHistory.ScrollIntoView(view.ListBoxHistory.SelectedItem); });
+                    if (SelectedIndex >= 0 && SelectedIndex < ConnectHistory.Count && ConnectHistory.Count > 0 && ConnectHistory[SelectedIndex] != OpenConnectActionItem)
+                    {
+                        var p = ConnectHistory[SelectedIndex].Protocol;
+                        SelectedProtocol = Protocols.FirstOrDefault(x => x.Protocol == p) ?? SelectedProtocol;
+                    }
                 }
             }
         }
@@ -143,7 +155,11 @@ namespace _1RM.View.Launcher
 
         public void RebuildConnectionHistory()
         {
-            var list = LocalityConnectRecorder.QuickConnectionHistoryGet();
+            if (!IoC.Get<ConfigurationService>().Launcher.AllowSaveInfoInQuickConnect)
+            {
+                LocalityConnectRecorder.QuickConnectionHistoryRemoveAll();
+            }
+            var list = LocalityConnectRecorder.QuickConnectionHistoryGetAll();
             list.Insert(0, OpenConnectActionItem);
             ConnectHistory = new ObservableCollection<QuickConnectionItem>(list);
             IoC.Get<LauncherWindowViewModel>().ReSetWindowHeight();
@@ -174,7 +190,7 @@ namespace _1RM.View.Launcher
                 return;
             }
 
-            var newList = LocalityConnectRecorder.QuickConnectionHistoryGet().Where(x => x.Host.StartsWith(keyword, StringComparison.OrdinalIgnoreCase));
+            var newList = LocalityConnectRecorder.QuickConnectionHistoryGetAll().Where(x => x.Host.StartsWith(keyword, StringComparison.OrdinalIgnoreCase));
             var list = newList?.ToList() ?? new List<QuickConnectionItem>();
             list.Insert(0, OpenConnectActionItem);
             ConnectHistory = new ObservableCollection<QuickConnectionItem>(list);
@@ -184,33 +200,41 @@ namespace _1RM.View.Launcher
 
         public void OpenConnection()
         {
-            if (this.View is not QuickConnectionView view) return;
+            var serverSelectionsViewSelected = _serverSelectionsViewSelected;
+            _serverSelectionsViewSelected = null; // release the reference to avoid memory leak
+
+            if (this.View is not QuickConnectionView) return;
             if (IoC.TryGet<LauncherWindowView>()?.IsClosing != false) return;
 
             if (ConnectHistory.Count > 0
                 && SelectedIndex >= 0
                 && SelectedIndex < ConnectHistory.Count)
             {
-                var host = Filter;
-                var protocol = SelectedProtocol.Protocol;
-                var item = ConnectHistory[SelectedIndex];
-                if (item == OpenConnectActionItem
-                    && string.IsNullOrWhiteSpace(host))
+                var host = ConnectHistory[SelectedIndex] != OpenConnectActionItem ? ConnectHistory[SelectedIndex].Host.Trim() : Filter.Trim();
+                if (string.IsNullOrWhiteSpace(host))
                     return;
 
+                string protocol = SelectedProtocol.Protocol;
+                string address = host;
+                string port = "";
+                var i = host.LastIndexOf(":", StringComparison.Ordinal);
+                if (i >= 0)
+                {
+                    if (int.TryParse(host.Substring(i + 1), out var intPort))
+                    {
+                        address = host.Substring(0, i).Trim();
+                        port = intPort.ToString();
+                    }
+                    else
+                    {
+                        // invalid port, reset address to let it be invalid
+                        address = "";
+                    }
+                }
 
-                // if open current input
-                if (item == OpenConnectActionItem)
-                {
-                    //host = Filter;
-                    //protocol = SelectedProtocol.Protocol;
-                }
-                // if open from history
-                else
-                {
-                    host = item.Host;
-                    protocol = item.Protocol;
-                }
+                // stop if address is empty
+                if (string.IsNullOrWhiteSpace(address))
+                    return;
 
                 // Hide Ui
                 Filter = "";
@@ -221,34 +245,68 @@ namespace _1RM.View.Launcher
                 server.DisplayName = host;
                 if (server is ProtocolBaseWithAddressPort protocolBaseWithAddressPort)
                 {
-                    protocolBaseWithAddressPort.Address = host;
-                    var i = host.LastIndexOf(":", StringComparison.Ordinal);
-                    if (i > 0)
+                    protocolBaseWithAddressPort.Address = address;
+                    if (string.IsNullOrWhiteSpace(port) == false)
                     {
-                        var portStr = host.Substring(i + 1);
-                        if (int.TryParse(portStr, out var port))
-                        {
-                            protocolBaseWithAddressPort.Port = port.ToString();
-                            protocolBaseWithAddressPort.Address = host.Substring(0, i);
-                        }
+                        protocolBaseWithAddressPort.Port = port;
                     }
                 }
 
+                if (serverSelectionsViewSelected != null)
+                {
+                    server.IconBase64 = serverSelectionsViewSelected.IconBase64;
+                }
+
                 // pop password window if needed
+                var pwdDlg = new PasswordPopupDialogViewModel();
                 if (server is ProtocolBaseWithAddressPortUserPwd protocolBaseWithAddressPortUserPwd)
                 {
-                    var pwdDlg = IoC.Get<PasswordPopupDialogViewModel>();
-                    pwdDlg.Title = $"[{server.ProtocolDisplayName}]{host}";
-                    if (string.IsNullOrEmpty(pwdDlg.UserName))
+                    pwdDlg = new PasswordPopupDialogViewModel(protocolBaseWithAddressPortUserPwd is SSH or SFTP, IoC.Get<ConfigurationService>().Launcher.AllowSaveInfoInQuickConnect)
                     {
-                        pwdDlg.UserName = protocolBaseWithAddressPortUserPwd.UserName;
-                        pwdDlg.Password = UnSafeStringEncipher.DecryptOrReturnOriginalString(protocolBaseWithAddressPortUserPwd.Password) ?? protocolBaseWithAddressPortUserPwd.Password;
+                        Title = $"[{server.ProtocolDisplayName}]{host}"
+                    };
+
+                    // if selected server in launcher list, and it is writable, then auto fill the server password into quick connect view
+                    // fill user and password
+                    if (serverSelectionsViewSelected is ProtocolBaseWithAddressPortUserPwd pup)
+                    {
+                        pwdDlg.UserName = pup.UserName;
+                        pwdDlg.Password = UnSafeStringEncipher.DecryptOrReturnOriginalString(pup.Password);
+                        pwdDlg.PrivateKey = UnSafeStringEncipher.DecryptOrReturnOriginalString(pup.PrivateKey);
                     }
+                    // otherwise, fill in the last used username and password
+                    else
+                    {
+                        if (IoC.Get<ConfigurationService>().Launcher.AllowSaveInfoInQuickConnect)
+                        {
+                            // find saved username and password then fill in
+                            var history = LocalityConnectRecorder.QuickConnectionHistoryGetAll().FirstOrDefault(x => x.Host == host && x.Protocol == protocol);
+                            if (history != null)
+                            {
+                                (pwdDlg.UserName, pwdDlg.Password, pwdDlg.PrivateKey) = history.GetUserPassword();
+                            }
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(pwdDlg.PrivateKey) && File.Exists(pwdDlg.PrivateKey))
+                    {
+                        pwdDlg.UsePrivateKeyForConnect = true;
+                    }
+
                     if (IoC.Get<IWindowManager>().ShowDialog(pwdDlg) == true)
                     {
                         protocolBaseWithAddressPortUserPwd.UserName = pwdDlg.UserName;
-                        protocolBaseWithAddressPortUserPwd.Password = pwdDlg.Password;
-                        pwdDlg.Password = "";
+                        if (pwdDlg.UsePrivateKeyForConnect)
+                        {
+                            protocolBaseWithAddressPortUserPwd.UsePrivateKeyForConnect = true;
+                            protocolBaseWithAddressPortUserPwd.Password = "";
+                            protocolBaseWithAddressPortUserPwd.PrivateKey = pwdDlg.PrivateKey;
+                        }
+                        else
+                        {
+                            protocolBaseWithAddressPortUserPwd.UsePrivateKeyForConnect = false;
+                            protocolBaseWithAddressPortUserPwd.PrivateKey = "";
+                            protocolBaseWithAddressPortUserPwd.Password = pwdDlg.Password;
+                        }
                     }
                     else
                     {
@@ -259,7 +317,19 @@ namespace _1RM.View.Launcher
                 MsAppCenterHelper.TraceSpecial("Quick connect", server.Protocol);
 
                 // save history
-                LocalityConnectRecorder.QuickConnectionHistoryAdd(new QuickConnectionItem() { Host = host, Protocol = protocol });
+                if (IoC.Get<ConfigurationService>().Launcher.AllowSaveInfoInQuickConnect)
+                {
+                    if (pwdDlg.CanRememberInfo)
+                    {
+                        LocalityConnectRecorder.QuickConnectionHistoryAddOrUpdate(host, protocol, pwdDlg.UserName, pwdDlg.Password, pwdDlg.PrivateKey);
+                    }
+                    else
+                    {
+                        LocalityConnectRecorder.QuickConnectionHistoryAddOrUpdate(host, protocol, "", "", "");
+                    }
+                }
+
+                // connect
                 GlobalEventHelper.OnRequestQuickConnect?.Invoke(server, fromView: $"{nameof(LauncherWindowView)} - {nameof(QuickConnectionView)}");
             }
         }

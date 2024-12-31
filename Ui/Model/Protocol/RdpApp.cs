@@ -46,6 +46,14 @@ namespace _1RM.Model.Protocol
             set => SetAndNotifyIfChanged(ref _audioQualityMode, value);
         }
 
+
+        private string _rdpFileAdditionalSettings = "";
+        public string RdpFileAdditionalSettings
+        {
+            get => _rdpFileAdditionalSettings;
+            set => SetAndNotifyIfChanged(ref _rdpFileAdditionalSettings, value);
+        }
+
         public override bool IsOnlyOneInstance()
         {
             return false;
@@ -75,7 +83,11 @@ namespace _1RM.Model.Protocol
         /// <returns></returns>
         public RdpConfig ToRdpConfig()
         {
-            var rdpConfig = new RdpConfig(DisplayName, $"{this.Address}:{this.GetPort()}", this.UserName, UnSafeStringEncipher.DecryptOrReturnOriginalString(Password));
+            var a = RdpFileAdditionalSettings + $"\ndisableremoteappcapscheck:i:0";
+            var rdpConfig = new RdpConfig(DisplayName, $"{this.Address}:{this.GetPort()}", 
+                this.UserName, UnSafeStringEncipher.DecryptOrReturnOriginalString(Password),
+                a);
+
             rdpConfig.AuthenticationLevel = 0;
             rdpConfig.KeyboardHook = 0;
             //rdpConfig.AudioMode = 2;
@@ -125,7 +137,7 @@ namespace _1RM.Model.Protocol
             {
                 switch (columnName)
                 {
-                    case nameof(DisplayName):
+                    case nameof(RemoteApplicationName):
                         {
                             if (string.IsNullOrWhiteSpace(RemoteApplicationName))
                                 return IoC.Translate(LanguageService.CAN_NOT_BE_EMPTY);
@@ -146,5 +158,9 @@ namespace _1RM.Model.Protocol
             }
         }
         #endregion
+        public override string GetHelpUrl()
+        {
+            return "https://1remote.org/usage/protocol/especial/remoteapp/";
+        }
     }
 }

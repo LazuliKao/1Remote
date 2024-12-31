@@ -13,6 +13,8 @@
         <local:ConverterHotkeyModifierKeys x:Key="ConverterHotkeyModifierKeys"></local:ConverterHotkeyModifierKeys>
     </UserControl.Resources>
     <Grid Background="{DynamicResource BackgroundBrush}">
+        <ScrollViewer>
+
         <StackPanel>
 
             <TextBlock Text="{DynamicResource Launcher}" Style="{StaticResource BlockTitleColumn}" />
@@ -99,7 +101,7 @@
                                         <TextBlock Grid.Row="2"
                                                Text="{Binding Title2}"
                                                ToolTip="{Binding Title2}"
-                                               FontSize="10" Opacity="0.6"></TextBlock>
+                                               FontSize="{DynamicResource GlobalFontSizeSmall}" Opacity="0.6"></TextBlock>
                                     </Grid>
                                 </DataTemplate>
                             </Grid.Resources>
@@ -145,7 +147,23 @@
                         </Grid>
                     </StackPanel>
                 </Grid>
+
+                <TextBlock Text="{DynamicResource 'Quick Connect'}" Style="{StaticResource BlockTitleColumn}" />
+
+                <Grid Style="{StaticResource GridOneRow}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Column1"></ColumnDefinition>
+                        <ColumnDefinition MinWidth="280" SharedSizeGroup="LauncherColumn2"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Column3"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="1" IsChecked="{Binding AllowSaveInfoInQuickConnect, Mode=TwoWay}" 
+                              VerticalAlignment="Center" 
+                              Content="{DynamicResource  'Allow Quick Connect to save entered address information'}"></CheckBox>
+                </Grid>
+
             </StackPanel>
         </StackPanel>
+
+        </ScrollViewer>
     </Grid>
 </UserControl>

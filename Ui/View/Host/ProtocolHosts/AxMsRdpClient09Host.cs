@@ -1,19 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using AxMSTSCLib;
 using MSTSCLib;
 using _1RM.Model.Protocol;
-using _1RM.Service;
 using _1RM.Service.Locality;
 using _1RM.Utils;
 using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.Controls;
 using Stylet;
@@ -56,7 +51,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
             int w = 0;
             int h = 0;
-            if (ParentWindow is TabWindowBase tab)
+            if (ParentWindow is TabWindowView tab)
             {
                 var size = tab.GetTabContentSize(ColorAndBrushHelper.ColorIsTransparent(this._rdpSettings.ColorHex) == true);
                 w = (int)size.Width;
@@ -136,11 +131,11 @@ namespace _1RM.View.Host.ProtocolHosts
                         && _rdpClient?.ExtendedDisconnectReason != ExtendedDisconnectReasonCode.exDiscReasonServerDeniedConnectionFips
                         && _rdpClient?.ExtendedDisconnectReason != ExtendedDisconnectReasonCode.exDiscReasonServerInsufficientPrivileges
                         && _rdpClient?.ExtendedDisconnectReason != ExtendedDisconnectReasonCode.exDiscReasonNoInfo  // conn to a power-off PC will get exDiscReasonNoInfo
-                        && _retryCount < MaxRetryCount)
+                        && _retryCount < MAX_RETRY_COUNT)
                     {
                         ++_retryCount;
                         TbMessageTitle.Visibility = Visibility.Visible;
-                        TbMessageTitle.Text = IoC.Translate("host_reconecting_info") + $"({_retryCount}/{MaxRetryCount})";
+                        TbMessageTitle.Text = IoC.Translate("host_reconecting_info") + $"({_retryCount}/{MAX_RETRY_COUNT})";
                         TbMessage.Text = reason;
                         this.ReConn();
                     }
@@ -166,6 +161,9 @@ namespace _1RM.View.Host.ProtocolHosts
             SimpleLogHelper.Debug("RDP Host:  RdpOnOnConnected");
             this.ParentWindow?.FlashIfNotActive();
 
+            _lastLoginTime = DateTime.Now;
+            _loginResizeTimer.Start();
+
             _flagHasConnected = true;
             Execute.OnUIThread(() =>
             {
@@ -184,20 +182,19 @@ namespace _1RM.View.Host.ProtocolHosts
 
         private void OnRdpClientLoginComplete(object? sender, EventArgs e)
         {
-            SimpleLogHelper.Debug("RDP Host:  RdpOnOnLoginComplete");
+            SimpleLogHelper.Debug("RDP Host:  OnRdpClientLoginComplete");
 
             OnCanResizeNowChanged?.Invoke();
             RdpHost.Visibility = Visibility.Visible;
             GridLoading.Visibility = Visibility.Collapsed;
             GridMessageBox.Visibility = Visibility.Collapsed;
             ParentWindowResize_StartWatch();
-            _resizeEndTimer?.Stop();
-            _resizeEndTimer?.Start();
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(5000);
-                _resizeEndTimer?.Stop();
-            });
+            //_resizeEndTimer?.Start();
+            //Task.Factory.StartNew(() =>
+            //{
+            //    Thread.Sleep(5000);
+            //    _resizeEndTimer?.Stop();
+            //});
         }
 
 
@@ -210,14 +207,11 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 case null:
                     return;
-                case TabWindowBase:
+                case TabWindowView:
                 {
                     // full-all-screen session switch to TabWindow, and click "Reconn" button, will entry this case.
                     _rdpClient!.FullScreen = false;
-                    if (_rdpSettings.IsTmpSession() == false)
-                    {
-                        LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
-                    }
+                    LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
                     return;
                 }
             }
@@ -225,19 +219,26 @@ namespace _1RM.View.Host.ProtocolHosts
 
             var screenSize = this.GetScreenSizeIfRdpIsFullScreen();
 
-            // ! don not remove
-            ParentWindow.WindowState = WindowState.Normal;
-            ParentWindow.WindowStyle = WindowStyle.None;
-            ParentWindow.ResizeMode = ResizeMode.NoResize;
+            double width = screenSize.Width / (_primaryScaleFactor / 100.0);
+            double height = screenSize.Height / (_primaryScaleFactor / 100.0);
+            int ceilingWidth = (int)Math.Ceiling(width);
+            int ceilingHeight = (int)Math.Ceiling(height);
+            ParentWindow.Dispatcher.Invoke(() =>
+            {
+                // ! do not remove
+                ParentWindow.WindowState = WindowState.Normal;
+                ParentWindow.WindowStyle = WindowStyle.None;
+                ParentWindow.ResizeMode = ResizeMode.NoResize;
 
-            ParentWindow.Width = screenSize.Width / (_primaryScaleFactor / 100.0);
-            ParentWindow.Height = screenSize.Height / (_primaryScaleFactor / 100.0);
-            ParentWindow.Left = screenSize.Left / (_primaryScaleFactor / 100.0);
-            ParentWindow.Top = screenSize.Top / (_primaryScaleFactor / 100.0);
+                ParentWindow.Width = ceilingWidth;
+                ParentWindow.Height = ceilingHeight;
+                ParentWindow.Left = screenSize.Left / (_primaryScaleFactor / 100.0);
+                ParentWindow.Top = screenSize.Top / (_primaryScaleFactor / 100.0);
+            });
 
-            SimpleLogHelper.Debug($"RDP to FullScreen resize ParentWindow to : W = {ParentWindow.Width}, H = {ParentWindow.Height}, while screen size is {screenSize.Width} × {screenSize.Height}, ScaleFactor = {_primaryScaleFactor}");
+            SimpleLogHelper.Debug($"RDP to FullScreen resize ParentWindow to : W = {ceilingWidth}({width}), H = {ceilingHeight}({height}), while screen size is {screenSize.Width} × {screenSize.Height}, ScaleFactor = {_primaryScaleFactor}");
 
-            // WARNING!: EnableFullAllScreens do not need SetRdpResolution
+            // WARNING!: EnableFullAllScreens do not need a SetRdpResolution
             if (_rdpSettings.RdpFullScreenFlag == ERdpFullScreenFlag.EnableFullScreen)
             {
                 switch (_rdpSettings.RdpWindowResizeMode)
@@ -270,10 +271,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
             // !do not remove
             ParentWindowSetToWindow();
-            if (_rdpSettings.IsTmpSession() == false)
-            {
-                LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
-            }
+            LocalityConnectRecorder.RdpCacheUpdate(_rdpSettings.Id, false);
             base.OnFullScreen2Window?.Invoke(base.ConnectionId);
         }
 

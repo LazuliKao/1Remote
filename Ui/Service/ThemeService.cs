@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using Shawn.Utils.Wpf;
 
 namespace _1RM.Service
@@ -156,9 +158,6 @@ namespace _1RM.Service
                 else
                     rd[key] = value;
             }
-            var rs = _appResourceDictionary.MergedDictionaries.Where(o =>
-                (o.Source != null && o.Source.IsAbsoluteUri && o.Source.AbsolutePath.ToLower().IndexOf("Theme/Default.xaml".ToLower()) >= 0)
-                || o[resourceTypeKey]?.ToString() == resourceTypeValue).ToArray();
 
             // create new theme resources
             var rd = new ResourceDictionary();
@@ -190,11 +189,46 @@ namespace _1RM.Service
             SetKey(rd, "DarkPrimaryColor", ColorAndBrushHelper.HexColorToMediaColor(theme.AccentDarkColor));
             SetKey(rd, "PrimaryDarkColor", ColorAndBrushHelper.HexColorToMediaColor(theme.AccentTextColor));
 
+            var font = GetFontFamily(theme.FontFamily);
+            SetKey(rd, "GlobalFontFamily", font);
+            theme.FontSize = Math.Max(10, theme.FontSize);
+            double globalFontSizeSmall = Math.Min(20.0, theme.FontSize - 2.0);
+            double globalFontSizeBody = Math.Min(20.0, theme.FontSize);
+            double globalFontSizeSubtitle = Math.Min(20.0, theme.FontSize + 2.0);
+            double globalFontSizeTitle = Math.Min(20.0, theme.FontSize + 6.0);
+            SetKey(rd, "GlobalFontSizeTitle", globalFontSizeTitle);
+            SetKey(rd, "GlobalFontSizeSubtitle", globalFontSizeSubtitle);
+            SetKey(rd, "GlobalFontSizeBody", globalFontSizeBody);
+            SetKey(rd, "GlobalFontSizeSmall", globalFontSizeSmall);
+
+
+
+
+
+            // remove old theme resources
+            var rs = _appResourceDictionary.MergedDictionaries.Where(o =>
+                (o?.Source?.IsAbsoluteUri == true && o.Source.AbsolutePath.ToLower().IndexOf("Default.xaml", StringComparison.OrdinalIgnoreCase) >= 0)
+                || o?[resourceTypeKey]?.ToString() == resourceTypeValue).ToArray();
             foreach (var r in rs)
             {
                 _appResourceDictionary.MergedDictionaries.Remove(r);
             }
+
+            // add new theme resources
             _appResourceDictionary.MergedDictionaries.Add(rd);
+        }
+
+        private static FontFamily GetFontFamily(string name)
+        {
+            // set default font family
+            var fontFamily = Fonts.SystemFontFamilies.FirstOrDefault(x => string.Equals(x.Source, name, StringComparison.CurrentCultureIgnoreCase));
+            fontFamily ??= Fonts.SystemFontFamilies.FirstOrDefault(x => string.Equals(x.Source, "Microsoft YaHei", StringComparison.CurrentCultureIgnoreCase));
+            fontFamily ??= Fonts.SystemFontFamilies.FirstOrDefault(x => x.Source.EndsWith("YaHei", StringComparison.OrdinalIgnoreCase));
+            fontFamily ??= Fonts.SystemFontFamilies.FirstOrDefault(x => x.Source.IndexOf("YaHei", StringComparison.OrdinalIgnoreCase) >= 0);
+            fontFamily ??= Fonts.SystemFontFamilies.FirstOrDefault(x => x.Source.IndexOf("雅黑", StringComparison.OrdinalIgnoreCase) >= 0);
+            fontFamily ??= Fonts.SystemFontFamilies.FirstOrDefault(x => x.Source.IndexOf("雅黑", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            return fontFamily ?? Fonts.SystemFontFamilies.First();
         }
     }
 }

@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Ribbon;
 using System.Windows.Data;
 using System.Windows.Interop;
 using _1RM.Model;
-using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
-using _1RM.Service;
 using _1RM.View.Settings;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.WpfResources.Theme.Styles;
-using Stylet;
 
 namespace _1RM.View.Host.ProtocolHosts
 {
@@ -107,45 +104,95 @@ namespace _1RM.View.Host.ProtocolHosts
                 });
             }
 
-            {
-                var cb = new CheckBox
-                {
-                    Content = IoC.TryGet<LanguageService>()?.Translate("Show XXX button", IoC.TryGet<LanguageService>()?.Translate("Reconnect") ?? ""),
-                    IsHitTestVisible = false,
-                };
-
-                var binding = new Binding("TabHeaderShowReConnectButton")
-                {
-                    Source = SettingsPage,
-                    Mode = BindingMode.TwoWay,
-                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
-                };
-                cb.SetBinding(CheckBox.IsCheckedProperty, binding);
-                MenuItems.Add(new System.Windows.Controls.MenuItem()
-                {
-                    Header = cb,
-                    Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowReConnectButton = !SettingsPage.TabHeaderShowReConnectButton; }),
-                });
-            }
+            MenuItems.Add(new Separator());
 
             {
-                var cb = new CheckBox
-                {
-                    Content = IoC.TryGet<LanguageService>()?.Translate("Show XXX button", IoC.TryGet<LanguageService>()?.Translate("Close") ?? ""),
-                    IsHitTestVisible = false,
-                };
+	            var subMenu = new System.Windows.Controls.MenuItem()
+	            {
+		            Header = IoC.Translate("Custom"),
+	            };
 
-                var binding = new Binding("TabHeaderShowCloseButton")
+
+	            {
+		            var cb = new CheckBox
+		            {
+			            Content = IoC.Translate("Show XXX button", IoC.Translate("Reconnect") ?? ""),
+			            IsHitTestVisible = false,
+		            };
+
+		            var binding = new Binding("TabHeaderShowReConnectButton")
+		            {
+			            Source = SettingsPage,
+			            Mode = BindingMode.TwoWay,
+			            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+		            };
+		            cb.SetBinding(CheckBox.IsCheckedProperty, binding);
+		            subMenu.Items.Add(new System.Windows.Controls.MenuItem()
+		            {
+			            Header = cb,
+			            Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowReConnectButton = !SettingsPage.TabHeaderShowReConnectButton; }),
+		            });
+				}
+
+	            {
+		            var cb = new CheckBox
+		            {
+			            Content = IoC.Translate("Show XXX button", IoC.Translate("Close") ?? ""),
+			            IsHitTestVisible = false,
+		            };
+
+		            var binding = new Binding("TabHeaderShowCloseButton")
+		            {
+			            Source = SettingsPage,
+			            Mode = BindingMode.TwoWay,
+			            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+		            };
+		            cb.SetBinding(CheckBox.IsCheckedProperty, binding);
+		            subMenu.Items.Add(new System.Windows.Controls.MenuItem()
+		            {
+			            Header = cb,
+			            Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowCloseButton = !SettingsPage.TabHeaderShowCloseButton; }),
+		            });
+				}
+
+
+	            {
+		            var cb = new CheckBox
+		            {
+			            Content = IoC.Translate("Show XXX button", "Icon"),
+			            IsHitTestVisible = false,
+		            };
+
+		            var binding = new Binding("TabHeaderShowIconButton")
+		            {
+			            Source = SettingsPage,
+			            Mode = BindingMode.TwoWay,
+			            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+		            };
+		            cb.SetBinding(CheckBox.IsCheckedProperty, binding);
+		            subMenu.Items.Add(new System.Windows.Controls.MenuItem()
+		            {
+			            Header = cb,
+			            Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowIconButton = !SettingsPage.TabHeaderShowIconButton; }),
+		            });
+	            }
+
+				MenuItems.Add(subMenu);
+			}
+
+			MenuItems.Add(new Separator());
+
+			var actions = protocolServer.GetActions(true);
+            foreach (var action in actions)
+            {
+                var tb = new TextBlock()
                 {
-                    Source = SettingsPage,
-                    Mode = BindingMode.TwoWay,
-                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+                    Text = action.ActionName,
                 };
-                cb.SetBinding(CheckBox.IsCheckedProperty, binding);
                 MenuItems.Add(new System.Windows.Controls.MenuItem()
                 {
-                    Header = cb,
-                    Command = new RelayCommand((_) => { SettingsPage.TabHeaderShowCloseButton = !SettingsPage.TabHeaderShowCloseButton; }),
+                    Header = tb,
+                    Command = new RelayCommand((o) => { action.Run(); }),
                 });
             }
         }
@@ -156,16 +203,11 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 if (ProtocolServer.IsOnlyOneInstance())
                 {
-                    return ProtocolServer switch
-                    {
-                        ProtocolBaseWithAddressPortUserPwd p1 => ProtocolServer.Id + "_" + p1.Address + "_" + p1.UserName,
-                        ProtocolBaseWithAddressPort p2 => ProtocolServer.Id + "_" + p2.Address,
-                        _ => ProtocolServer.Id
-                    };
+                    return ProtocolServer.BuildConnectionId();
                 }
                 else
                 {
-                    return ProtocolServer.Id + "_" + this.GetHashCode();
+                    return ProtocolServer.BuildConnectionId() + "_" + this.GetHashCode();
                 }
             }
         }
@@ -177,7 +219,7 @@ namespace _1RM.View.Host.ProtocolHosts
         /// <summary>
         /// special menu for tab
         /// </summary>
-        public List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+        public List<System.Windows.Controls.Control> MenuItems { get; set; } = new List<System.Windows.Controls.Control>();
 
         /// <summary>
         /// since resizing when rdp is connecting would not tiger the rdp size change event

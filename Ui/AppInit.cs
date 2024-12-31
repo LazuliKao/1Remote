@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using _1RM.Model;
 using _1RM.Service;
@@ -15,13 +14,10 @@ using _1RM.Utils;
 using _1RM.Utils.KiTTY.Model;
 using _1RM.Utils.PRemoteM;
 using _1RM.Service.DataSource.DAO;
-using _1RM.Service.Locality;
 using _1RM.View.ServerList;
 using _1RM.View.Settings.General;
 using _1RM.View.Utils;
 using System.Collections.Generic;
-using _1RM.Utils.WindowsSdk;
-using Stylet;
 
 namespace _1RM
 {
@@ -112,6 +108,28 @@ namespace _1RM
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory); // in case user start app in a different working dictionary.
 
             MsAppCenterHelper.Init(Assert.MS_APP_CENTER_SECRET);
+            SentryIoHelper.Init(Assert.SENTRY_IO_DEN);
+
+            try
+            {
+                var kys = new Dictionary<string, string>();
+#if FOR_MICROSOFT_STORE_ONLY
+                kys.Add("Distributor", $"{Assert.APP_NAME} MS Store");
+#else
+                kys.Add("Distributor", $"{Assert.APP_NAME} Exe");
+#endif
+
+#if NETFRAMEWORK
+                kys.Add($"App start with - Net", $"4.8");
+#else
+                kys.Add($"App start with - Net", $"6.x");
+#endif
+                MsAppCenterHelper.TraceSpecial(kys);
+            }
+            catch (Exception ex)
+            {
+                MsAppCenterHelper.Error(ex);
+            }
         }
 
         public static LanguageService? LanguageServiceObj;
@@ -290,6 +308,8 @@ namespace _1RM
                 ConfigurationServiceObj = new ConfigurationService(KeywordMatchServiceObj, newConfiguration);
             }
 
+            SimpleLogHelper.WriteLogLevel = (SimpleLogHelper.EnumLogLevel)ConfigurationServiceObj.General.LogLevel;
+
             // make sure path is not empty
             if (string.IsNullOrWhiteSpace(ConfigurationServiceObj.LocalDataSource.Path))
             {
@@ -336,15 +356,14 @@ namespace _1RM
         {
             if (_isNewUser == false && ConfigurationServiceObj != null)
             {
-                MsAppCenterHelper.TraceSpecial($"App start with - ListPageIsCardView", $"{ConfigurationServiceObj.General.ListPageIsCardView}");
-                MsAppCenterHelper.TraceSpecial($"App start with - ConfirmBeforeClosingSession", $"{ConfigurationServiceObj.General.ConfirmBeforeClosingSession}");
-                MsAppCenterHelper.TraceSpecial($"App start with - LauncherEnabled", $"{ConfigurationServiceObj.Launcher.LauncherEnabled}");
-                MsAppCenterHelper.TraceSpecial($"App start with - Theme", $"{ConfigurationServiceObj.Theme.ThemeName}");
-#if NETFRAMEWORK
-                MsAppCenterHelper.TraceSpecial($"App start with - Net", $"4.8");
-#else
-                MsAppCenterHelper.TraceSpecial($"App start with - Net", $"6.x");
-#endif
+                var kys = new Dictionary<string, string>
+                {
+                    { $"App start with - ListPageIsCardView", $"{ConfigurationServiceObj.General.ListPageIsCardView}" },
+                    { $"App start with - ConfirmBeforeClosingSession", $"{ConfigurationServiceObj.General.ConfirmBeforeClosingSession}" },
+                    { $"App start with - LauncherEnabled", $"{ConfigurationServiceObj.Launcher.LauncherEnabled}" },
+                    { $"App start with - Theme", $"{ConfigurationServiceObj.Theme.ThemeName}" }
+                };
+                MsAppCenterHelper.TraceSpecial(kys);
             }
 
             KittyConfig.CleanUpOldConfig();

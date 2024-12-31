@@ -11,7 +11,7 @@
              d:DesignHeight="1450" d:DesignWidth="800">
     <StackPanel>
 
-        <TextBlock Style="{StaticResource EditorGroupTextBlockTitle}" Text="{DynamicResource Connection}"></TextBlock>
+        <TextBlock Style="{StaticResource EditorGroupTextBlockTitle}" Text="{DynamicResource 'Connection Info'}"></TextBlock>
 
         <Grid Style="{StaticResource EditorRowGrid}">
             <StackPanel Orientation="Horizontal">
@@ -20,7 +20,7 @@
                     <TextBox Text="{Binding New.Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                              Tag="e.g. 192.168.0.101"></TextBox>
                 </Grid>
-                <TextBlock Style="{StaticResource EditorRowGridTitle}" Width="60" Text="{DynamicResource Port}"></TextBlock>
+                <TextBlock Style="{StaticResource EditorRowGridTitleFollowing}" Width="60" Text="{DynamicResource Port}"></TextBlock>
                 <Grid Style="{StaticResource EditorRowGridInput}">
                     <TextBox MinWidth="50" 
                              Text="{Binding New.Port, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
@@ -49,6 +49,7 @@
                     <controls:PasswordInput Height="28" Password="{Binding New.Password, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                             />
                 </Grid>
+                <CheckBox Margin="5 0 0 0" Content="{DynamicResource 'Ask for password when open connect'}" IsChecked="{Binding New.AskPasswordWhenConnect}"></CheckBox>
             </StackPanel>
         </Grid>
 

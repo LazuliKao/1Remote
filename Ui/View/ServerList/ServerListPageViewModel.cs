@@ -279,7 +279,16 @@ namespace _1RM.View.ServerList
                         SimpleLogHelper.Debug($"Remove dummy server for `{source.Value.DataSourceName}`");
                     }
                 }
-                IsAddToolTipShow = !VmServerList.Any(x => x is not ProtocolBaseViewModelDummy);
+
+                if (VmServerList.Any(x => x is not ProtocolBaseViewModelDummy)
+                    || IoC.Get<ConfigurationService>().AdditionalDataSource.Any())
+                {
+                    IsAddToolTipShow = false;
+                }
+                else
+                {
+                    IsAddToolTipShow = true;
+                }
             });
             ApplySort();
         }
@@ -318,6 +327,7 @@ namespace _1RM.View.ServerList
                     VmServerListDummyNode();
                     RaisePropertyChanged(nameof(VmServerList));
                     ApplySort();
+                    RefreshCollectionViewSource(true);
                 });
             }
         }
@@ -415,53 +425,66 @@ namespace _1RM.View.ServerList
 
         public Dictionary<ProtocolBaseViewModel, bool> IsServerVisible = new Dictionary<ProtocolBaseViewModel, bool>();
         private string _lastKeyword = string.Empty;
-        public void RefreshCollectionViewSource()
+        public void RefreshCollectionViewSource(bool force = false)
         {
             var filter = IoC.Get<MainWindowViewModel>().MainFilterString.Trim();
-            if (this.View is not ServerListPageView v
-                || _lastKeyword == filter)
+            if (this.View is not ServerListPageView)
             {
-                IsServerVisible.Clear();
                 return;
             }
 
-            lock (this)
-            {
-                List<ProtocolBaseViewModel> servers;
-                if (filter.StartsWith(_lastKeyword))
+            if(_lastKeyword != filter || force)
+                lock (this)
                 {
-                    // calc only visible servers when filter is appended
-                    servers = IsServerVisible.Where(x => x.Value == true).Select(x => x.Key).ToList();
-                    foreach (var protocolBaseViewModel in IoC.Get<GlobalData>().VmItemList)
+                    List<ProtocolBaseViewModel> servers;
+                    if (filter.StartsWith(_lastKeyword))
                     {
-                        if (!servers.Contains(protocolBaseViewModel))
-                            servers.Add(protocolBaseViewModel);
+                        // calc only visible servers when filter is appended
+                        servers = IsServerVisible.Where(x => x.Value == true).Select(x => x.Key).ToList();
+                        foreach (var protocolBaseViewModel in IoC.Get<GlobalData>().VmItemList)
+                        {
+                            if (!servers.Contains(protocolBaseViewModel))
+                                servers.Add(protocolBaseViewModel);
+                        }
+                    }
+                    else
+                    {
+                        servers = IoC.Get<GlobalData>().VmItemList;
+                        IsServerVisible.Clear();
+                    }
+                    _lastKeyword = filter;
+
+                    var tmp = TagAndKeywordEncodeHelper.DecodeKeyword(filter);
+                    TagFilters = tmp.TagFilterList;
+                    var matchResults = TagAndKeywordEncodeHelper.MatchKeywords(servers.Select(x => x.Server).ToList(), tmp, false);
+                    for (int i = 0; i < servers.Count; i++)
+                    {
+                        var vm = servers[i];
+                        if (i < 0 || i >= matchResults.Count)
+                        {
+                            // we get error report here that i is out of range, so we add this check 2024.10.31 https://appcenter.ms/users/VShawn/apps/1Remote-1/crashes/errors/859400306/overview
+                            MsAppCenterHelper.Error(new Exception($"MatchKeywords: i({i}) is out of range(0-{matchResults.Count})"), new Dictionary<string, string>()
+                            {
+                                {"filter", filter},
+                                {"servers.Count", servers.Count.ToString()},
+                            });
+                            continue;
+                        }
+                        else
+                        {
+                            if (IsServerVisible.ContainsKey(vm))
+                                IsServerVisible[vm] = matchResults[i].Item1;
+                            else
+                                IsServerVisible.Add(vm, matchResults[i].Item1);
+                        }
                     }
                 }
-                else
-                {
-                    servers = IoC.Get<GlobalData>().VmItemList;
-                    IsServerVisible.Clear();
-                }
-                _lastKeyword = filter;
-
-                var tmp = TagAndKeywordEncodeHelper.DecodeKeyword(filter);
-                TagFilters = tmp.TagFilterList;
-                var matchResults = TagAndKeywordEncodeHelper.MatchKeywords(servers.Select(x => x.Server).ToList(), tmp, false);
-                for (int i = 0; i < servers.Count; i++)
-                {
-                    var vm = servers[i];
-                    if (IsServerVisible.ContainsKey(vm))
-                        IsServerVisible[vm] = matchResults[i].Item1;
-                    else
-                        IsServerVisible.Add(vm, matchResults[i].Item1);
-                } 
-            }
 
             Execute.OnUIThread(() =>
             {
                 // MainFilterString changed -> refresh view source -> calc visible in `ServerListItemSource_OnFilter`
-                CollectionViewSource.GetDefaultView(v.LvServerCards.ItemsSource).Refresh();
+                if ((this.View as ServerListPageView)?.LvServerCards.ItemsSource != null)
+                    CollectionViewSource.GetDefaultView((this.View as ServerListPageView)!.LvServerCards.ItemsSource).Refresh();
                 // invoke ServerListPageView.cs => ServerListItemSource_OnFilter
             });
         }
@@ -550,11 +573,17 @@ namespace _1RM.View.ServerList
         {
             // select save to which source
             var source = DataSourceSelectorViewModel.SelectDataSource();
+            if (source == null)
+            {
+                return new Tuple<DataSourceBase?, string?>(null, null);
+            }
             if (source?.IsWritable != true)
             {
                 MessageBoxHelper.ErrorAlert($"Can not add server to DataSource ({source?.DataSourceName ?? "null"}) since it is not writable.");
                 return new Tuple<DataSourceBase?, string?>(null, null);
             }
+
+            // select file with filter
             if (this.View is ServerListPageView view)
                 view.CbPopForInExport.IsChecked = false;
             var path = SelectFileHelper.OpenFile(title: IoC.Translate("import_server_dialog_title"), filter: filter);
@@ -580,8 +609,9 @@ namespace _1RM.View.ServerList
                         {
                             var list = new List<ProtocolBase>();
                             var deserializeObject = JsonConvert.DeserializeObject<List<object>>(File.ReadAllText(path, Encoding.UTF8)) ?? new List<object>();
-                            foreach (var server in deserializeObject.Select(json => ItemCreateHelper.CreateFromJsonString(json.ToString() ?? "")).Where(server => server != null))
+                            foreach (var server in deserializeObject.Select(json => ItemCreateHelper.CreateFromJsonString(json.ToString() ?? "")))
                             {
+                                if (server == null) continue;
                                 server.Id = string.Empty;
                                 server.DecryptToConnectLevel();
                                 list.Add(server);

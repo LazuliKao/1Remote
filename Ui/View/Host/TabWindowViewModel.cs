@@ -1,31 +1,29 @@
-﻿ using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using Dragablz;
 using _1RM.Service;
 using _1RM.Utils;
 using _1RM.View.Host.ProtocolHosts;
- using _1RM.View.Utils;
- using Shawn.Utils.Interface;
+using _1RM.View.Settings;
+using _1RM.View.Utils;
 using Shawn.Utils.Wpf;
 using Stylet;
-using _1RM.Service.DataSource.DAO.Dapper;
- using _1RM.Service.Locality;
 
- namespace _1RM.View.Host
+namespace _1RM.View.Host
 {
     public class TabWindowViewModel : MaskLayerContainerScreenBase, IDisposable
     {
         public readonly string Token;
-        private readonly TabWindowBase _windowView;
+        public new TabWindowView View { get; private set; }
+        public SettingsPageViewModel SettingsPage => IoC.Get<SettingsPageViewModel>();
 
-        public TabWindowViewModel(string token, TabWindowBase windowView)
+        public TabWindowViewModel(TabWindowView windowView)
         {
-            _windowView = windowView;
-            Token = token;
+            View = windowView;
+            Token = DateTime.Now.Ticks.ToString();
             Items.CollectionChanged += ItemsOnCollectionChanged;
         }
 
@@ -34,7 +32,7 @@ using _1RM.Service.DataSource.DAO.Dapper;
             RaisePropertyChanged(nameof(BtnCloseAllVisibility));
             if (Items.Count == 0)
             {
-                _windowView.Hide();
+                View.Hide();
             }
         }
 
@@ -72,8 +70,6 @@ using _1RM.Service.DataSource.DAO.Dapper;
                 return ResizeMode.CanResize;
             }
         }
-
-        public bool LauncherEnabled => IoC.Get<ConfigurationService>().Launcher.LauncherEnabled;
 
         public ObservableCollection<TabItemViewModel> Items { get; } = new ObservableCollection<TabItemViewModel>();
 
@@ -152,7 +148,7 @@ using _1RM.Service.DataSource.DAO.Dapper;
                 return;
             }
             Items.Add(newItem);
-            newItem.Content.SetParentWindow(_windowView);
+            newItem.Content.SetParentWindow(View);
             SelectedItem = newItem;
         }
 
@@ -214,8 +210,6 @@ using _1RM.Service.DataSource.DAO.Dapper;
                     if (o is Window window)
                     {
                         window.WindowState = WindowState.Minimized;
-                        if (SelectedItem?.Content != null)
-                            SelectedItem.Content.ToggleAutoResize(false);
                     }
                 });
             }
@@ -228,15 +222,15 @@ using _1RM.Service.DataSource.DAO.Dapper;
             {
                 return _cmdGoMaximize ??= new RelayCommand((o) =>
                 {
-                    if (_windowView.WindowState != WindowState.Maximized)
+                    if (View.WindowState != WindowState.Maximized)
                     {
-                        _windowView.WindowState = WindowState.Maximized;
+                        View.WindowState = WindowState.Maximized;
                     }
 
                     else
                     {
-                        _windowView.WindowStyle = WindowStyle.SingleBorderWindow;
-                        _windowView.WindowState = WindowState.Normal;
+                        View.WindowStyle = WindowStyle.SingleBorderWindow;
+                        View.WindowState = WindowState.Normal;
                     }
                 });
             }
@@ -250,22 +244,22 @@ using _1RM.Service.DataSource.DAO.Dapper;
             {
                 return _cmdGoMaximizeF11 ??= new RelayCommand((o) =>
                 {
-                    if (_windowView.WindowState != WindowState.Maximized)
+                    if (View.WindowState != WindowState.Maximized)
                     {
-                        _windowView.WindowStyle = WindowStyle.None;
-                        _windowView.WindowState = WindowState.Maximized;
+                        View.WindowStyle = WindowStyle.None;
+                        View.WindowState = WindowState.Maximized;
                     }
                     else
                     {
-                        _windowView.WindowStyle = WindowStyle.SingleBorderWindow;
-                        _windowView.WindowState = WindowState.Normal;
+                        View.WindowStyle = WindowStyle.SingleBorderWindow;
+                        View.WindowState = WindowState.Normal;
                     }
                 });
             }
         }
 
 
-        private bool _canCmdClose = true;
+        private object _canCmdClose = new object();
         private RelayCommand? _cmdCloseAll;
         public RelayCommand CmdCloseAll
         {
@@ -273,12 +267,11 @@ using _1RM.Service.DataSource.DAO.Dapper;
             {
                 return _cmdCloseAll ??= new RelayCommand((o) =>
                 {
-                    if (_canCmdClose)
+                    if (this.Items.Count <= 0 || App.ExitingFlag != false) return;
+                    lock (_canCmdClose)
                     {
-                        _canCmdClose = false;
+                        if (this.Items.Count <= 0 || App.ExitingFlag != false) return;
                         if (IoC.Get<ConfigurationService>().General.ConfirmBeforeClosingSession == true
-                            && this.Items.Count > 0
-                            && App.ExitingFlag == false
                             && false == MessageBoxHelper.Confirm(IoC.Translate("Are you sure you want to close the connection?"), ownerViewModel: this))
                         {
                         }
@@ -286,10 +279,8 @@ using _1RM.Service.DataSource.DAO.Dapper;
                         {
                             IoC.Get<SessionControlService>().CloseProtocolHostAsync(
                                 Items
-                                .Where(x => x.Content.ProtocolServer.IsTmpSession() == false)
-                                .Select(x => x.Content.ConnectionId).ToArray());
+                                    .Select(x => x.Content.ConnectionId).ToArray());
                         }
-                        _canCmdClose = true;
                     }
                 });
             }
@@ -302,9 +293,8 @@ using _1RM.Service.DataSource.DAO.Dapper;
             {
                 return _cmdClose ??= new RelayCommand((o) =>
                 {
-                    if (_canCmdClose)
+                    lock (_canCmdClose)
                     {
-                        _canCmdClose = false;
                         if (IoC.Get<ConfigurationService>().General.ConfirmBeforeClosingSession == true
                             && App.ExitingFlag == false
                             && false == MessageBoxHelper.Confirm(IoC.Translate("Are you sure you want to close the connection?"), ownerViewModel: this))
@@ -327,8 +317,6 @@ using _1RM.Service.DataSource.DAO.Dapper;
                                 IoC.Get<SessionControlService>().CloseProtocolHostAsync(host.ConnectionId);
                             }
                         }
-
-                        _canCmdClose = true;
                     }
                 }, o => this.SelectedItem != null);
             }
@@ -348,8 +336,7 @@ using _1RM.Service.DataSource.DAO.Dapper;
         /// <returns></returns>
         public INewTabHost<Window> GetNewHost(IInterTabClient interTabClient, object partition, TabablzControl source)
         {
-            string token = DateTime.Now.Ticks.ToString();
-            var v = new TabWindowView(token, IoC.Get<LocalityService>());
+            var v = new TabWindowView();
             IoC.Get<SessionControlService>().AddTab(v);
             return new NewTabHost<Window>(v, v.TabablzControl);
         }
@@ -362,7 +349,7 @@ using _1RM.Service.DataSource.DAO.Dapper;
         /// <returns></returns>
         public TabEmptiedResponse TabEmptiedHandler(TabablzControl tabControl, Window window)
         {
-            if (window is TabWindowBase tab)
+            if (window is TabWindowView tab)
             {
                 tab.GetViewModel().Items.Clear();
                 IoC.Get<SessionControlService>().CleanupProtocolsAndWindows();

@@ -15,6 +15,7 @@ using _1RM.Model.Protocol.FileTransmit;
 using _1RM.Model.Protocol.FileTransmit.Transmitters;
 using _1RM.Model.Protocol.FileTransmit.Transmitters.TransmissionController;
 using _1RM.Service;
+using _1RM.Service.Locality;
 using _1RM.Utils;
 using Dapper;
 using Shawn.Utils;
@@ -68,7 +69,7 @@ namespace _1RM.View.Host.ProtocolHosts
                     catch (Exception e)
                     {
                         SimpleLogHelper.Error(e);
-                        IoMessageLevel = 2;
+                        IoMessageLevel = IoMessageLevelError;
                         IoMessage = e.Message;
                     }
                     finally
@@ -84,7 +85,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
         private void AddTransmitTask(TransmitTask t)
         {
-            TransmitTasks.Add(t);
+            TransmitTasks.Insert(0, t);
             void func(ETransmitTaskStatus status, Exception? e)
             {
                 if (t.OnTaskEnd != null)
@@ -92,7 +93,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
                 if (e != null)
                 {
-                    IoMessageLevel = 2;
+                    IoMessageLevel = IoMessageLevelError;
                     IoMessage = e.Message;
                 }
 
@@ -254,13 +255,13 @@ namespace _1RM.View.Host.ProtocolHosts
 
                             if (showIoMessage)
                             {
-                                IoMessageLevel = 0;
+                                IoMessageLevel = IoMessageLevelNormal;
                                 IoMessage = $"ls {CurrentPath}";
                             }
                         }
                         catch (Exception e)
                         {
-                            IoMessageLevel = 2;
+                            IoMessageLevel = IoMessageLevelError;
                             IoMessage = $"ls {CurrentPath}: " + e.Message;
                             if (CurrentPath != path)
                                 ShowFolder(CurrentPath, showIoMessage: false);
@@ -275,26 +276,6 @@ namespace _1RM.View.Host.ProtocolHosts
                 }
             });
             t.Start();
-        }
-
-        public void TvFileList_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            ListView? view = null;
-            ScrollContentPresenter? p = null;
-            if (sender is ListView lv)
-            {
-                view = lv;
-                var ip = MyVisualTreeHelper.FindVisualChild<ItemsPresenter>(view);
-                p = MyVisualTreeHelper.FindVisualChild<ScrollContentPresenter>((DependencyObject)ip!);
-            }
-            if (view == null || p == null)
-                return;
-            var curSelectedItem = MyVisualTreeHelper.GetItemOnPosition(p, e.GetPosition(p));
-            if (curSelectedItem == null)
-            {
-                ((ListView)sender).SelectedItem = null;
-            }
-            e.Handled = false;
         }
 
         public void FileList_OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -423,12 +404,12 @@ namespace _1RM.View.Host.ProtocolHosts
                                     try
                                     {
                                         Trans.Delete(selected);
-                                        IoMessageLevel = 0;
+                                        IoMessageLevel = IoMessageLevelNormal;
                                         IoMessage = $"Delete {selected}";
                                     }
                                     catch (Exception e)
                                     {
-                                        IoMessageLevel = 2;
+                                        IoMessageLevel = IoMessageLevelError;
                                         IoMessage = $"Delete {selected}: " + e.Message;
                                     }
                                 }
@@ -485,12 +466,12 @@ namespace _1RM.View.Host.ProtocolHosts
                                     try
                                     {
                                         Trans.CreateDirectory(newPath);
-                                        IoMessageLevel = 0;
+                                        IoMessageLevel = IoMessageLevelNormal;
                                         IoMessage = $"Create folder {newPath}";
                                     }
                                     catch (Exception e)
                                     {
-                                        IoMessageLevel = 2;
+                                        IoMessageLevel = IoMessageLevelError;
                                         IoMessage = $"Create folder {newPath}: " + e.Message;
                                     }
                                 }
@@ -501,12 +482,12 @@ namespace _1RM.View.Host.ProtocolHosts
                                 try
                                 {
                                     Trans.RenameFile(item.FullName, newPath);
-                                    IoMessageLevel = 0;
+                                    IoMessageLevel = IoMessageLevelNormal;
                                     IoMessage = $"Move {item.FullName} => {newPath}";
                                 }
                                 catch (Exception e)
                                 {
-                                    IoMessageLevel = 2;
+                                    IoMessageLevel = IoMessageLevelError;
                                     IoMessage = $"Move {item.FullName} => {newPath}: " + e.Message;
                                 }
                             }
@@ -615,7 +596,7 @@ namespace _1RM.View.Host.ProtocolHosts
                         }
                         catch (Exception e)
                         {
-                            IoMessageLevel = 2;
+                            IoMessageLevel = IoMessageLevelError;
                             IoMessage = e.Message;
                         }
                     }
@@ -711,8 +692,74 @@ namespace _1RM.View.Host.ProtocolHosts
             }
         }
 
-        private RelayCommand? _cmdDownload;
 
+        private string? _lastDownloadDirPath;
+        private string? LastDownloadDirPath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_lastDownloadDirPath) || !Directory.Exists(_lastDownloadDirPath))
+                    return null;
+                return _lastDownloadDirPath;
+            }
+            set => _lastDownloadDirPath = value;
+        }
+
+        private RelayCommand? _cmdDownloadToLastDir;
+        public RelayCommand CmdDownloadToLastDir
+        {
+            get
+            {
+                return _cmdDownloadToLastDir ??= new RelayCommand((o) =>
+                {
+                    if (Trans?.IsConnected() != true)
+                        return;
+
+                    var selectedItems = new List<RemoteItem>();
+                    if (o is RemoteItem item)
+                    {
+                        selectedItems.Add(item);
+                    }
+                    else
+                    {
+                        selectedItems.AddRange(RemoteItems.Where(x => x.IsSelected == true));
+                    }
+                    if (selectedItems.Count == 0)
+                        return;
+
+                    var destinationDirectoryPath = LastDownloadDirPath ?? "";
+                    if (string.IsNullOrEmpty(destinationDirectoryPath) || !Directory.Exists(destinationDirectoryPath))
+                    {
+                        var path = SelectFileHelper.SaveFile(
+                            title: IoC.Translate("file_transmit_host_message_files_DownloadToLastDir_to"),
+                            selectedFileName: IoC.Get<ILanguageService>().Translate("file_transmit_host_message_files_download_to_dir"),
+                            initialDirectory: null
+                        );
+                        if (path == null) return;
+                        destinationDirectoryPath = new FileInfo(path).DirectoryName!;
+                        if (!IoPermissionHelper.HasWritePermissionOnFile(path)
+                            || !IoPermissionHelper.HasWritePermissionOnDir(destinationDirectoryPath))
+                        {
+                            IoMessage = IoC.Translate("string_permission_denied") + $": {path}";
+                            IoMessageLevel = IoMessageLevelError;
+                            return;
+                        }
+                    }
+
+                    if (Directory.Exists(destinationDirectoryPath))
+                    {
+                        LastDownloadDirPath = destinationDirectoryPath;
+                        var t = new TransmitTask(IoC.Get<ILanguageService>(), Trans, ConnectionId, destinationDirectoryPath, selectedItems.ToArray());
+                        AddTransmitTask(t);
+                        t.StartTransmitAsync(this.RemoteItems);
+                    }
+                });
+            }
+        }
+
+
+
+        private RelayCommand? _cmdDownload;
         public RelayCommand CmdDownload
         {
             get
@@ -722,29 +769,36 @@ namespace _1RM.View.Host.ProtocolHosts
                     if (Trans?.IsConnected() != true)
                         return;
 
-                    if (RemoteItems.All(x => x.IsSelected != true))
+                    var selectedItems = new List<RemoteItem>();
+                    if (o is RemoteItem item)
                     {
-                        return;
+                        selectedItems.Add(item);
                     }
+                    else
+                    {
+                        selectedItems.AddRange(RemoteItems.Where(x => x.IsSelected == true));
+                    }
+                    if (selectedItems.Count == 0)
+                        return;
 
                     var path = SelectFileHelper.SaveFile(
                         title: IoC.Translate("file_transmit_host_message_files_download_to"),
-                        selectedFileName: IoC.Get<ILanguageService>()
-                            .Translate("file_transmit_host_message_files_download_to_dir"));
+                        selectedFileName: IoC.Get<ILanguageService>().Translate("file_transmit_host_message_files_download_to_dir"),
+                        initialDirectory: LastDownloadDirPath
+                        );
                     if (path == null) return;
                     {
                         var destinationDirectoryPath = new FileInfo(path).DirectoryName!;
-
                         if (!IoPermissionHelper.HasWritePermissionOnFile(path)
                             || !IoPermissionHelper.HasWritePermissionOnDir(destinationDirectoryPath))
                         {
                             IoMessage = IoC.Translate("string_permission_denied") + $": {path}";
-                            IoMessageLevel = 2;
+                            IoMessageLevel = IoMessageLevelError;
                             return;
                         }
 
-                        var ris = RemoteItems.Where(x => x.IsSelected == true).ToArray();
-                        var t = new TransmitTask(IoC.Get<ILanguageService>(), Trans, ConnectionId, destinationDirectoryPath, ris);
+                        LastDownloadDirPath = destinationDirectoryPath;
+                        var t = new TransmitTask(IoC.Get<ILanguageService>(), Trans, ConnectionId, destinationDirectoryPath, selectedItems.ToArray());
                         AddTransmitTask(t);
                         t.StartTransmitAsync(this.RemoteItems);
                     }
@@ -780,8 +834,6 @@ namespace _1RM.View.Host.ProtocolHosts
                             return;
 
                         var fbd = new FolderBrowserDialog();
-                        fbd.Description = IoC.Get<ILanguageService>()
-                            .Translate("file_transmit_host_message_select_files_to_upload");
                         fbd.ShowNewFolderButton = false;
                         if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                         {
@@ -914,10 +966,11 @@ namespace _1RM.View.Host.ProtocolHosts
         private readonly CancellationTokenSource _consumingTransmitTaskCancellationTokenSource = new CancellationTokenSource();
 
 
+        private double _gridLoadingBgOpacity = 1;
         public double GridLoadingBgOpacity
         {
             get => _gridLoadingBgOpacity;
-            set => _gridLoadingBgOpacity = value;
+            set => SetAndNotifyIfChanged(ref _gridLoadingBgOpacity, value);
         }
 
         private Visibility _gridLoadingVisibility = Visibility.Collapsed;
@@ -935,6 +988,9 @@ namespace _1RM.View.Host.ProtocolHosts
             }
         }
 
+        private const int IoMessageLevelNormal = 0;
+        private const int IoMessageLevelWarning = 1;
+        private const int IoMessageLevelError = 2;
         private int _ioMessageLevel = 0;
         /// <summary>
         /// level: 0 normal; 1 warning(yellow); 2 error(red);
@@ -952,7 +1008,58 @@ namespace _1RM.View.Host.ProtocolHosts
             set => SetAndNotifyIfChanged(ref _ioMessage, value);
         }
 
-
+        public double ColumnFileNameLength
+        {
+            get
+            {
+                var w = IoC.Get<LocalityService>().FtpColumnFileNameLength;
+                if (w > 50)
+                {
+                    return w;
+                }
+                return -1;
+            }
+            set => IoC.Get<LocalityService>().FtpColumnFileNameLength = (int)value;
+        }
+        public double ColumnFileTimeLength
+        {
+            get
+            {
+                var w = IoC.Get<LocalityService>().FtpColumnFileTimeLength;
+                if (w > 50)
+                {
+                    return w;
+                }
+                return -1;
+            }
+            set => IoC.Get<LocalityService>().FtpColumnFileTimeLength = (int)value;
+        }
+        public double ColumnFileTypeLength
+        {
+            get
+            {
+                var w = IoC.Get<LocalityService>().FtpColumnFileTypeLength;
+                if (w > 50)
+                {
+                    return w;
+                }
+                return -1;
+            }
+            set => IoC.Get<LocalityService>().FtpColumnFileTypeLength = (int)value;
+        }
+        public double ColumnFileSizeLength
+        {
+            get
+            {
+                var w = IoC.Get<LocalityService>().FtpColumnFileSizeLength;
+                if (w > 50)
+                {
+                    return w;
+                }
+                return -1;
+            }
+            set => IoC.Get<LocalityService>().FtpColumnFileSizeLength = (int)value;
+        }
 
 
         #region Path conrol
@@ -1036,7 +1143,6 @@ namespace _1RM.View.Host.ProtocolHosts
 
 
         private ObservableCollection<TransmitTask> _transmitTasks = new ObservableCollection<TransmitTask>();
-        private double _gridLoadingBgOpacity = 1;
 
         public ObservableCollection<TransmitTask> TransmitTasks
         {

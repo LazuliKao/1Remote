@@ -36,6 +36,8 @@
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<RunPostBuildEvent>Always</RunPostBuildEvent>
 		<XamlDebuggingInformation>True</XamlDebuggingInformation>
+
+        <CsWinRTAotOptimizerEnabled>false</CsWinRTAotOptimizerEnabled> <!-- 20241030 fix https://github.com/dotnet/sdk/issues/43680 -->
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'!='net48'">
@@ -69,8 +71,17 @@
 		<CopySQLiteInteropFiles>false</CopySQLiteInteropFiles>
 		<CleanSQLiteInteropFiles>false</CleanSQLiteInteropFiles>
 		<CollectSQLiteInteropFiles>false</CollectSQLiteInteropFiles>
-		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<SignAssembly>False</SignAssembly>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AssemblyVersion>1.0.1.41230</AssemblyVersion>
+		<FileVersion>$(AssemblyVersion)</FileVersion>
+		<Version>$(AssemblyVersion)</Version>
+		<Authors>Shawn</Authors>
+		<Product>Shawn Veck</Product>
+		<Description>1Remote is a modern personal remote session manager and launcher.</Description>
+		<Copyright>1remote.github.io</Copyright>
 	</PropertyGroup>
 
 	<!--<ItemGroup>
@@ -120,6 +131,8 @@
 		<None Remove="Resources\Icons\000_OS\000_Win2016.png" />
 		<None Remove="Resources\Icons\000_OS\000_Win2019.png" />
 		<None Remove="Resources\Icons\000_OS\000_Win2022.png" />
+		<None Remove="Resources\Icons\000_OS\000_Win2025.png" />
+		<None Remove="Resources\Icons\000_OS\000_Win2025_white.png" />
 		<None Remove="Resources\Icons\000_OS\000_Win7.png" />
 		<None Remove="Resources\Icons\000_OS\000_Win7_2.png" />
 		<None Remove="Resources\Icons\000_OS\000_Win8.png" />
@@ -147,15 +160,15 @@
 		<None Remove="Resources\Icons\001_APP\011_NoMachine.png" />
 		<None Remove="Resources\Icons\001_APP\011_Wordpress.png" />
 		<None Remove="Resources\Image\Logo\logo32.png" />
+		<None Remove="Resources\Theme\Default.xaml.exclude" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="1Remote.Security" Version="1.1.0" />
 		<PackageReference Include="1Remote.VncSharpCore" Version="1.2.1" />
-		<PackageReference Include="AvalonEdit" Version="6.1.3.50" />
+		<PackageReference Include="AvalonEdit" Version="6.3.0.90" />
 		<PackageReference Include="Dapper" Version="2.0.123" />
-		<PackageReference Include="Dragablz" Version="0.0.3.234" />
-		<PackageReference Include="FluentFTP" Version="37.0.2" />
+		<PackageReference Include="FluentFTP" Version="51.0.0" />
 		<PackageReference Include="JsonKnownTypes" Version="0.5.4" />
 		<PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
 		<PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.14" />
@@ -164,16 +177,18 @@
 		<PackageReference Include="Microsoft.AppCenter.Crashes" Version="5.0.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="NUlid" Version="1.7.1" />
+		<PackageReference Include="Sentry" Version="4.13.0" />
 		<PackageReference Include="SSH.NET" Version="2023.0.0" />
 		<PackageReference Include="Stylet" Version="1.3.6" />
 		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.117" />
 		<PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
-		<PackageReference Include="System.IO.Ports" Version="7.0.0" />
+		<PackageReference Include="System.IO.Ports" Version="8.0.0" />
 		<PackageReference Include="VariableKeywordMatcherIn1" Version="1.0.12" />
-		<PackageReference Include="VirtualizingWrapPanel" Version="1.5.7" />
+		<PackageReference Include="VirtualizingWrapPanel" Version="2.0.10" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Dragablz\Dragablz\Dragablz.csproj" />
 		<ProjectReference Include="..\Shawn.Utils\Shawn.Utils.WpfResources\Shawn.Utils.WpfResources.csproj" />
 		<ProjectReference Include="..\Shawn.Utils\Shawn.Utils.Wpf\Shawn.Utils.Wpf.csproj" />
 		<ProjectReference Include="..\Shawn.Utils\Shawn.Utils\Shawn.Utils.csproj" />
@@ -201,6 +216,8 @@
 		<Resource Include="Resources\Icons\000_OS\000_Win2016.png" />
 		<Resource Include="Resources\Icons\000_OS\000_Win2019.png" />
 		<Resource Include="Resources\Icons\000_OS\000_Win2022.png" />
+		<Resource Include="Resources\Icons\000_OS\000_Win2025.png" />
+		<Resource Include="Resources\Icons\000_OS\000_Win2025_white.png" />
 		<Resource Include="Resources\Icons\000_OS\000_Win7.png" />
 		<Resource Include="Resources\Icons\000_OS\000_Win7_2.png" />
 		<Resource Include="Resources\Icons\000_OS\000_Win8_0.png" />
@@ -379,9 +396,6 @@
 			<XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
 			<SubType>Designer</SubType>
 		</Page>
-		<Page Update="Resources\Theme\Default.xaml">
-			<SubType>Designer</SubType>
-		</Page>
 		<Page Update="View\AboutPageView.xaml">
 			<SubType>Designer</SubType>
 		</Page>
@@ -418,6 +432,9 @@
 		<Page Update="View\Editor\DataSourceSelectorView.xaml">
 			<XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
 			<SubType>Designer</SubType>
+		</Page>
+		<Page Update="View\Editor\IconPopupDialogView.xaml">
+		  <SubType>Designer</SubType>
 		</Page>
 		<Page Update="View\Editor\ServerEditorPageView.xaml">
 			<SubType>Designer</SubType>
@@ -485,11 +502,11 @@
 		</Page>
 	</ItemGroup>
 
-	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-		<Exec Command="powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_APP_CENTER_SECRET===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\APP_CENTER_SECRET_1REMOTE.txt&quot;&#xD;&#xA;powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_SALT===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\Salt.txt&quot;&#xD;&#xA;powershell.exe ..\scripts\Set-BuildDate.ps1 -filePath .\Ui\AppVersion.cs" />
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)'!='Debug'">
+		<Exec Command="powershell.exe ..\scripts\Set-AssemblyVersion.ps1&#xD;&#xA;powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_APP_CENTER_SECRET===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\APP_CENTER_SECRET_1REMOTE.txt&quot;&#xD;&#xA;powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_SENTRY_IO_DEN===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\SENTRY_IO_DEN.txt&quot;&#xD;&#xA;powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_SALT===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\Salt.txt&quot;&#xD;&#xA;powershell.exe ..\scripts\Set-BuildDate.ps1 -filePath .\Ui\AppVersion.cs" />
 	</Target>
 
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Exec Command="powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_APP_CENTER_SECRET===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\APP_CENTER_SECRET_1REMOTE.txt&quot; -isRevert&#xD;&#xA;powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_SALT===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\Salt.txt&quot; -isRevert&#xD;&#xA;powershell.exe ..\scripts\Set-BuildDate.ps1 -filePath .\Ui\AppVersion.cs -isRevert" />
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)'!='Debug'">
+		<Exec Command="powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_APP_CENTER_SECRET===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\APP_CENTER_SECRET_1REMOTE.txt&quot; -isRevert&#xD;&#xA;powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_SENTRY_IO_DEN===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\SENTRY_IO_DEN.txt&quot; -isRevert&#xD;&#xA;powershell.exe ..\scripts\Set-Secret.ps1 -filePath .\Ui\Assert.cs -Pattern &quot;===REPLACE_ME_WITH_SALT===&quot; -localSecretFilePath &quot;C:\1Remote_Secret\Salt.txt&quot; -isRevert&#xD;&#xA;powershell.exe ..\scripts\Set-BuildDate.ps1 -filePath .\Ui\AppVersion.cs -isRevert" />
 	</Target>
 </Project>

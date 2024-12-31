@@ -9,7 +9,6 @@ using _1RM.Service.DataSource.Model;
 using _1RM.Utils;
 using _1RM.View.Utils;
 using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.FileSystem;
 
@@ -66,8 +65,7 @@ namespace _1RM.View.Settings.DataSource
             {
                 return _cmdAdd ??= new RelayCommand((o) =>
                 {
-                    if (o is not string type
-                        || _configurationService.AdditionalDataSource.Count >= 2)
+                    if (o is not string type)
                     {
                         return;
                     }
@@ -102,7 +100,11 @@ namespace _1RM.View.Settings.DataSource
                     {
                         try
                         {
-                            _dataSourceService.AddOrUpdateDataSource(dataSource);
+                            var ret = _dataSourceService.AddOrUpdateDataSource(dataSource);
+                            if (ret.Status != EnumDatabaseStatus.OK)
+                            {
+                                MessageBoxHelper.ErrorAlert(ret.GetErrorMessage);
+                            }
                         }
                         finally
                         {
@@ -111,7 +113,6 @@ namespace _1RM.View.Settings.DataSource
                     });
                 }, _ =>
                         IoPermissionHelper.HasWritePermissionOnFile(AppPathHelper.Instance.ProfileAdditionalDataSourceJsonPath)
-                        && _configurationService.AdditionalDataSource.Count < 2
                     );
             }
         }
@@ -143,7 +144,11 @@ namespace _1RM.View.Settings.DataSource
                     {
                         try
                         {
-                            _dataSourceService.AddOrUpdateDataSource(dataSource);
+                            var ret = _dataSourceService.AddOrUpdateDataSource(dataSource);
+                            if (ret.Status != EnumDatabaseStatus.OK)
+                            {
+                                MessageBoxHelper.ErrorAlert(ret.GetErrorMessage);
+                            }
                         }
                         finally
                         {
@@ -213,7 +218,11 @@ namespace _1RM.View.Settings.DataSource
                         {
                             try
                             {
-                                _dataSourceService.AddOrUpdateDataSource(dataSource);
+                                var ret = _dataSourceService.AddOrUpdateDataSource(dataSource);
+                                if (ret.Status != EnumDatabaseStatus.OK)
+                                {
+                                    MessageBoxHelper.ErrorAlert(ret.GetErrorMessage);
+                                }
                             }
                             finally
                             {

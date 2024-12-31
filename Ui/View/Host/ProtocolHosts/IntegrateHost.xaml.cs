@@ -12,6 +12,10 @@ using System.Windows.Forms;
 using _1RM.Model;
 using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
+using _1RM.Model.ProtocolRunner;
+using _1RM.Model.ProtocolRunner.Default;
+using _1RM.Utils;
+using _1RM.Utils.KiTTY;
 using Shawn.Utils;
 using Stylet;
 using Path = System.IO.Path;
@@ -177,23 +181,26 @@ namespace _1RM.View.Host.ProtocolHosts
         private readonly System.Windows.Forms.Panel _panel;
         private readonly HashSet<IntPtr> _exeHandles = new();
         public readonly string ExeFullName;
-        public readonly string ExeArguments;
+        public string ExeArguments { get; private set; }
         private readonly Dictionary<string, string> _environmentVariables;
+        private readonly Runner _runner;
+        private readonly string _sessionName = "";
 
-        public static IntegrateHost Create(ProtocolBase protocol, string exeFullName, string exeArguments, Dictionary<string, string>? environmentVariables = null)
+        public static IntegrateHost Create(ProtocolBase protocol, Runner runner, string exeFullName, string exeArguments, Dictionary<string, string>? environmentVariables = null)
         {
             IntegrateHost? view = null;
             Execute.OnUIThreadSync(() =>
             {
-                view = new IntegrateHost(protocol, exeFullName, exeArguments, environmentVariables);
+                view = new IntegrateHost(protocol, runner, exeFullName, exeArguments, environmentVariables);
             });
             return view!;
         }
 
-        private IntegrateHost(ProtocolBase protocol, string exeFullName, string exeArguments, Dictionary<string, string>? environmentVariables = null) : base(protocol, false)
+        private IntegrateHost(ProtocolBase protocol, Runner runner, string exeFullName, string exeArguments, Dictionary<string, string>? environmentVariables = null) : base(protocol, false)
         {
             ExeFullName = exeFullName;
             ExeArguments = exeArguments;
+            _runner = runner;
             _environmentVariables = environmentVariables ?? new Dictionary<string, string>();
             InitializeComponent();
 
@@ -206,6 +213,13 @@ namespace _1RM.View.Host.ProtocolHosts
             _panel.SizeChanged += PanelOnSizeChanged;
 
             FormsHost.Child = _panel;
+
+
+            if (runner is KittyRunner kittyRunner)
+            {
+                _sessionName = $"{Assert.APP_NAME}_{protocol.Protocol}_{protocol.Id}_{DateTimeOffset.Now.ToUnixTimeSeconds()}";
+                RunAfterConnected += () => PuttyConnectableExtension.DelKittySessionConfig(_sessionName, kittyRunner.PuttyExePath);
+            }
         }
 
         #region Resize
@@ -282,7 +296,7 @@ namespace _1RM.View.Host.ProtocolHosts
                     lStyle &= ~(int)WindowStyles.WS_CAPTION; // no title
                     lStyle &= ~(int)WindowStyles.WS_BORDER; // no border
                     lStyle &= ~(int)WindowStyles.WS_THICKFRAME;
-                    lStyle &= ~(int)WindowStyles.WS_VSCROLL;
+                    //lStyle &= ~(int)WindowStyles.WS_VSCROLL;
                     //lStyle |= (int)WindowExStyles.WS_EX_TOOLWINDOW;
                     SetWindowLong(exeHandle, (int)GetWindowLongIndex.GWL_STYLE, lStyle);
                 }
@@ -359,10 +373,48 @@ namespace _1RM.View.Host.ProtocolHosts
 
         public void Start()
         {
-            if (File.Exists(ExeFullName) == false) return;
-
             RunBeforeConnect?.Invoke();
             var exeFullName = ExeFullName;
+
+            if (ProtocolServer is IKittyConnectable kittyConnectable && _runner is KittyRunner kittyRunner)
+            {
+                // KITTY 需要根据 _sessionName 配置 cli 命令参数，所以在 start 时重新计算 cli 参数。
+                ExeArguments = kittyConnectable.GetExeArguments(_sessionName);
+                if (ProtocolServer is ProtocolBaseWithAddressPortUserPwd { UsePrivateKeyForConnect: true } pw && string.IsNullOrEmpty(pw.PrivateKey) == false)
+                {
+                    var pk = pw.PrivateKey;
+                    // if private key is not all ascii, copy it to temp file
+                    if (pw.IsPrivateKeyAllAscii() == false && File.Exists(pw.PrivateKey))
+                    {
+                        pk = Path.Combine(Path.GetTempPath(), new FileInfo(pw.PrivateKey).Name);
+                        File.Copy(pw.PrivateKey, pk, true);
+                        var autoDelTask = new Task(() =>
+                        {
+                            Thread.Sleep(30 * 1000);
+                            try
+                            {
+                                if (File.Exists(pk))
+                                    File.Delete(pk);
+                            }
+                            catch
+                            {
+                                // ignored
+                            }
+                        });
+                        autoDelTask.Start();
+                    }
+                    kittyConnectable.ConfigKitty(_sessionName, kittyRunner, pk);
+                }
+                else
+                    kittyConnectable.ConfigKitty(_sessionName, kittyRunner, "");
+            }
+
+            if (Path.IsPathRooted(exeFullName)
+                && File.Exists(ExeFullName) == false)
+            {
+                MessageBoxHelper.ErrorAlert($"Exe file '{ExeFullName}' does not existed! We can not start the connection!");
+                return;
+            }
 
             var startInfo = new ProcessStartInfo
             {
@@ -396,7 +448,7 @@ namespace _1RM.View.Host.ProtocolHosts
 
             Task.Factory.StartNew(() =>
             {
-                Thread.Sleep(1 * 1000);
+                Thread.Sleep(5 * 1000);
                 RunAfterConnected?.Invoke();
             });
 

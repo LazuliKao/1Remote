@@ -28,6 +28,7 @@
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text="{DynamicResource 'Exe path'}"></TextBlock>
                     <Grid Style="{StaticResource EditorRowGridInput}">
                         <TextBox Tag="e.g. C:/vnc/viewer.exe or %VNC%/viewer.exe"
+                                 LostFocus="TextBoxExePath_OnLostFocus"
                                  Text="{Binding ExePath, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                  ></TextBox>
                     </Grid>
@@ -42,7 +43,7 @@
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text="{DynamicResource 'Hosting'}"></TextBlock>
                     <CheckBox IsChecked="{Binding New.RunWithHosting}">
-                        <TextBlock Foreground="Red" Text="{DynamicResource 'Caution: some exe can not be hosted in 1Remote.'}" TextWrapping="Wrap"></TextBlock>
+                        <TextBlock Style="{StaticResource TextBlockBase}" Foreground="Red" Text="{DynamicResource 'Caution: some exe can not be hosted in 1Remote.'}" TextWrapping="Wrap"></TextBlock>
                     </CheckBox>
                 </StackPanel>
             </Grid>
@@ -61,7 +62,7 @@
 
         <StackPanel>
 
-            <TextBlock Style="{StaticResource EditorGroupTextBlockTitle}" Text="{DynamicResource Connection}"></TextBlock>
+            <TextBlock Style="{StaticResource EditorGroupTextBlockTitle}" Text="{DynamicResource 'Connection Info'}"></TextBlock>
 
             <StackPanel Orientation="Horizontal" MinHeight="{StaticResource InputHeight}"  Margin="0 0 0 15"
                         Visibility="{Binding RequiredHostName, Converter={StaticResource ConverterBool2Visible}}">
@@ -69,7 +70,7 @@
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text="{DynamicResource Hostname}"></TextBlock>
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" 
                                VerticalAlignment="Top"
-                               Opacity="0.5" FontSize="10" Margin="0 25 30 0"
+                               Opacity="0.5" FontSize="{DynamicResource GlobalFontSizeSmall}" Margin="0 25 30 0"
                                Text="%1RM_HOSTNAME%"></TextBlock>
                 </Grid>
                 <Grid Style="{StaticResource EditorRowGridInput}">
@@ -87,7 +88,7 @@
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text="{DynamicResource Port}"></TextBlock>
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" 
                                VerticalAlignment="Top"
-                               Opacity="0.5" FontSize="10" Margin="0 25 30 0" 
+                               Opacity="0.5" FontSize="{DynamicResource GlobalFontSizeSmall}" Margin="0 25 30 0" 
                                Text="%1RM_PORT%"></TextBlock>
                 </Grid>
                 <Grid Style="{StaticResource EditorRowGridInput}">
@@ -105,12 +106,12 @@
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text="{DynamicResource User}"></TextBlock>
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" 
                                VerticalAlignment="Top"
-                               Opacity="0.5" FontSize="10" Margin="0 25 30 0" 
+                               Opacity="0.5" FontSize="{DynamicResource GlobalFontSizeSmall}" Margin="0 25 30 0" 
                                Text="%1RM_USERNAME%"></TextBlock>
                 </Grid>
                 <Grid Style="{StaticResource EditorRowGridInput}">
                     <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
-                             Tag="{Binding HintHostName}"
+                             Tag="{Binding HintUserName}"
                              Height="{StaticResource InputHeight}" 
                     ></TextBox>
                 </Grid>
@@ -123,7 +124,7 @@
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text="{DynamicResource Password}"></TextBlock>
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" 
                                VerticalAlignment="Top"
-                               Opacity="0.5" FontSize="10" Margin="0 25 30 0" 
+                               Opacity="0.5" FontSize="{DynamicResource GlobalFontSizeSmall}" Margin="0 25 30 0" 
                                Text="%1RM_PASSWORD%"></TextBlock>
                 </Grid>
                 <Grid Style="{StaticResource EditorRowGridInput}">
@@ -143,7 +144,7 @@
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text="{DynamicResource 'Private key'}"></TextBlock>
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" 
                                VerticalAlignment="Top"
-                               Opacity="0.5" FontSize="10" Margin="0 25 30 0" 
+                               Opacity="0.5" FontSize="{DynamicResource GlobalFontSizeSmall}" Margin="0 25 30 0" 
                                Text="%1RM_PRIVATE_KEY_PATH%"></TextBlock>
                 </Grid>
                 <Grid Style="{StaticResource EditorRowGridInput}" Height="{StaticResource InputHeight}">

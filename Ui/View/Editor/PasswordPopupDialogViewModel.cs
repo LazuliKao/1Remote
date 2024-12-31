@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using _1RM.Model;
 using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
 using _1RM.Service;
+using _1RM.Service.Locality;
 using _1RM.Utils;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
@@ -15,16 +17,11 @@ namespace _1RM.View.Editor
 {
     public class PasswordPopupDialogViewModel : NotifyPropertyChangedBaseScreen
     {
-        public static string LastUsername = "";
-        public static string LastPassword = "";
-
-        //public List<ProtocolBaseViewModel> ProtocolList { get; }
-
         public bool DialogResult { get; set; } = false;
 
         public string Title { get; set; } = "";
 
-        private string _userName = "Administrator";
+        private string _userName = "";
         public string UserName
         {
             get => _userName;
@@ -38,10 +35,76 @@ namespace _1RM.View.Editor
             set => SetAndNotifyIfChanged(ref _password, value);
         }
 
-        public PasswordPopupDialogViewModel()
+        private bool _canUsePrivateKeyForConnect = true;
+        public bool CanUsePrivateKeyForConnect
         {
-            UserName = UnSafeStringEncipher.SimpleDecrypt(LastUsername) ?? LastUsername;
-            Password = UnSafeStringEncipher.SimpleDecrypt(LastPassword) ?? LastPassword;
+            get => _canUsePrivateKeyForConnect;
+            set => SetAndNotifyIfChanged(ref _canUsePrivateKeyForConnect, value);
+        }
+
+        private bool _usePrivateKeyForConnect = false;
+        public bool UsePrivateKeyForConnect
+        {
+            get => _canUsePrivateKeyForConnect && _usePrivateKeyForConnect;
+            set => SetAndNotifyIfChanged(ref _usePrivateKeyForConnect, CanUsePrivateKeyForConnect && value);
+        }
+
+
+        private bool _canRememberInfo = true;
+        public bool CanRememberInfo
+        {
+            get => _canRememberInfo;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _canRememberInfo, value))
+                {
+                    RaisePropertyChanged(nameof(IsRememberInfo));
+                }
+            }
+        }
+
+        public bool IsRememberInfo
+        {
+            get => _canRememberInfo && IoC.Get<LocalityService>().GetMisc<bool>($"{nameof(PasswordPopupDialogViewModel)}.{nameof(IsRememberInfo)}");
+            set
+            {
+                IoC.Get<LocalityService>().SetMisc($"{nameof(PasswordPopupDialogViewModel)}.{nameof(IsRememberInfo)}", value.ToString());
+                RaisePropertyChanged();
+            }
+        }
+
+        private string _privateKey = "";
+        public string PrivateKey
+        {
+            get => _privateKey;
+            set => SetAndNotifyIfChanged(ref _privateKey, value);
+        }
+
+        public PasswordPopupDialogViewModel(bool canUsePrivateKeyForConnect = false, bool canRememberInfo = false)
+        {
+            CanUsePrivateKeyForConnect = canUsePrivateKeyForConnect;
+            CanRememberInfo = canRememberInfo;
+        }
+
+        protected override void OnViewLoaded()
+        {
+            base.OnViewLoaded();
+            if (View is PasswordPopupDialogView v)
+            {
+                v.TbUserName.Text = UserName;
+                v.TbPwd.Password = Password;
+
+                if (!string.IsNullOrEmpty(v.TbUserName.Text))
+                {
+                    v.TbPwd.Focus();
+                    v.TbPwd.CaretIndex = v.TbPwd.Password.Length;
+                }
+                else
+                {
+                    v.TbUserName.Focus();
+                    v.TbUserName.CaretIndex = v.TbUserName.Text.Length;
+                }
+            }
         }
 
 
@@ -53,8 +116,6 @@ namespace _1RM.View.Editor
         {
             if (!string.IsNullOrEmpty(UserName))
             {
-                LastUsername = UnSafeStringEncipher.SimpleEncrypt(UserName);
-                LastPassword = UnSafeStringEncipher.SimpleEncrypt(Password);
                 return true;
             }
             return false;

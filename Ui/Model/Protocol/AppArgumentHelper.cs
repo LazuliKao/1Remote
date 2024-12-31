@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Windows.Documents;
 using _1RM.Model.Protocol.Base;
-using _1RM.Utils.KiTTY;
 
 namespace _1RM.Model.Protocol;
 
@@ -32,6 +30,38 @@ public static class AppArgumentHelper
             var app = new LocalApp()
             {
                 DisplayName = "Chrome",
+                AppProtocolDisplayName = "Chrome",
+                RunWithHosting = false,
+                ArgumentList = new ObservableCollection<AppArgument>(argumentList),
+            };
+            return app;
+        }
+        return null;
+    }
+
+
+    private static LocalApp? GetNoMachine(string path)
+    {
+        if (path.Trim().EndsWith("nxplayer.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            var argumentList = new List<AppArgument>
+            {
+                new AppArgument()
+                {
+                    Type = AppArgumentType.File,
+                    Name = "nxs file",
+                    Key = "",
+                    IsNullable = false,
+                    Value = "",
+                    Description = "The nxs file created by NoMachine",
+                    AddBlankAfterKey = false,
+                    AddBlankAfterValue = true,
+                },
+            };
+            var app = new LocalApp()
+            {
+                DisplayName = "NoMachine",
+                AppProtocolDisplayName = "NoMachine",
                 RunWithHosting = false,
                 ArgumentList = new ObservableCollection<AppArgument>(argumentList),
             };
@@ -176,6 +206,7 @@ public static class AppArgumentHelper
             var app = new LocalApp()
             {
                 DisplayName = "FreeRdp",
+                AppProtocolDisplayName = "FreeRdp",
                 RunWithHosting = false,
                 ArgumentList = new ObservableCollection<AppArgument>(argumentList),
             };
@@ -270,6 +301,7 @@ public static class AppArgumentHelper
             var app = new LocalApp()
             {
                 DisplayName = "PuTTY",
+                AppProtocolDisplayName = "PuTTY",
                 RunWithHosting = true,
                 ArgumentList = new ObservableCollection<AppArgument>(argumentList),
             };
@@ -277,6 +309,106 @@ public static class AppArgumentHelper
         }
         return null;
     }
+
+
+    private static LocalApp? GetWindowsTerminalArgumentList(string path)
+    {
+        if (path.ToLower() == "wt"
+            || path.IndexOf("wt.exe", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            var argumentList = new List<AppArgument>
+            {
+                new AppArgument()
+                {
+                    Type = AppArgumentType.Const,
+                    Name = "misc1",
+                    Key = "",
+                    IsNullable = true,
+                    Value = @$"-w 1 new-tab --title ""{ProtocolBaseWithAddressPort.MACRO_HOST_NAME}"" --suppressApplicationTitle plink",
+                    AddBlankAfterKey = false,
+                    AddBlankAfterValue = true,
+                },
+                new AppArgument()
+                {
+                    Type = AppArgumentType.Const,
+                    Name = "Host",
+                    Key = "-ssh",
+                    IsNullable = false,
+                    Description = "The host name or IP address to connect to.",
+                    Value = ProtocolBaseWithAddressPort.MACRO_HOST_NAME,
+                    AddBlankAfterKey = true,
+                    AddBlankAfterValue = true,
+                },
+                new AppArgument()
+                {
+                    Type = AppArgumentType.Const,
+                    Name = "Port",
+                    Key = "-P",
+                    IsNullable = false,
+                    Description = "The port number to connect to.",
+                    Value = ProtocolBaseWithAddressPort.MACRO_PORT,
+                    AddBlankAfterKey = true,
+                    AddBlankAfterValue = true,
+                },
+                new AppArgument()
+                {
+                    Type = AppArgumentType.Const,
+                    Name = "misc2",
+                    Key = "",
+                    IsNullable = true,
+                    Value = "-C -X -no-antispoof",
+                    AddBlankAfterKey = true,
+                    AddBlankAfterValue = true,
+                },
+                new AppArgument()
+                {
+                    Type = AppArgumentType.Const,
+                    Name = "User Name",
+                    Key = "-l",
+                    IsNullable = true,
+                    Description = "The user name to log in as on the remote machine.",
+                    Value = ProtocolBaseWithAddressPortUserPwd.MACRO_USERNAME,
+                    AddBlankAfterKey = true,
+                    AddBlankAfterValue = true,
+                },
+                new AppArgument()
+                {
+                    Type = AppArgumentType.Const,
+                    Name = "Password",
+                    Key = "-pw",
+                    IsNullable = true,
+                    Description = "The password to use for authentication.",
+                    Value = ProtocolBaseWithAddressPortUserPwd.MACRO_PASSWORD,
+                    AddBlankAfterKey = true,
+                    AddBlankAfterValue = true,
+                },
+            };
+            // add auto cmd if kitty
+            if (path.IndexOf("kitty", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                argumentList.Add(new AppArgument()
+                {
+                    Type = AppArgumentType.Normal,
+                    Name = "Auto Command",
+                    Key = "-cmd",
+                    IsNullable = true,
+                    Description = "Run command after connected.",
+                    AddBlankAfterKey = true,
+                    AddBlankAfterValue = true,
+                });
+            }
+            var app = new LocalApp()
+            {
+                DisplayName = "Windows Terminal",
+                AppProtocolDisplayName = "WT",
+                RunWithHosting = false,
+                ArgumentList = new ObservableCollection<AppArgument>(argumentList),
+            };
+            return app;
+        }
+        return null;
+    }
+
 
     private static LocalApp? GetWinScp(string path)
     {
@@ -362,6 +494,7 @@ public static class AppArgumentHelper
             var app = new LocalApp()
             {
                 DisplayName = "WinSCP",
+                AppProtocolDisplayName = "WinSCP",
                 RunWithHosting = false,
                 ArgumentList = new ObservableCollection<AppArgument>(argumentList),
             };
@@ -497,6 +630,7 @@ public static class AppArgumentHelper
             var app = new LocalApp()
             {
                 DisplayName = "UltraVNC",
+                AppProtocolDisplayName = "VNC",
                 RunWithHosting = false,
                 ArgumentList = new ObservableCollection<AppArgument>(argumentList),
             };
@@ -541,12 +675,12 @@ public static class AppArgumentHelper
                 {
                     Type = AppArgumentType.Const,
                     Name = "Password",
-                    Key = "-password",
+                    Key = "-password=",
                     IsNullable = true,
                     Description = "The password to use for authentication.",
                     Value = ProtocolBaseWithAddressPortUserPwd.MACRO_PASSWORD,
                     AddBlankAfterValue = true,
-                    AddBlankAfterKey = true,
+                    AddBlankAfterKey = false,
                 },
                 new AppArgument()
                 {
@@ -556,12 +690,13 @@ public static class AppArgumentHelper
                     IsNullable = true,
                     Value = "-scale=auto",
                     AddBlankAfterValue = true,
-                    AddBlankAfterKey = true,
+                    AddBlankAfterKey = false,
                 },
             };
             var app = new LocalApp()
             {
                 DisplayName = "TightVNC",
+                AppProtocolDisplayName = "VNC",
                 RunWithHosting = true,
                 ArgumentList = new ObservableCollection<AppArgument>(argumentList),
             };
@@ -574,12 +709,14 @@ public static class AppArgumentHelper
     {
         exePath = exePath.ToLower();
         return GetPuttyArgumentList(exePath)
+               ?? GetWindowsTerminalArgumentList(exePath)
                ?? GetChrome(exePath)
                ?? GetFreeRdp(exePath)
                ?? GetWinScp(exePath)
                ?? GetFilezilla(exePath)
                ?? GetTightVNC(exePath)
                ?? GetUltraVNC(exePath)
+               ?? GetNoMachine(exePath)
                ?? null;
     }
 }

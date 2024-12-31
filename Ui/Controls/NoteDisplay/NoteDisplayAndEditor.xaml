@@ -34,6 +34,7 @@
                     </Border.CornerRadius>
                     <Grid>
                         <TextBlock Text="{DynamicResource Note}" 
+                                   Style="{StaticResource TextBlockBase}"
                                    FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Center"
                                    Foreground="{DynamicResource PrimaryTextBrush}"></TextBlock>
 
@@ -88,6 +89,7 @@
                     <Grid Margin="10"
                           MouseEnter="GridEditor_OnMouseEnter"
                           MouseLeave="GridEditor_OnMouseLeave"
+                          Background="Transparent"
                           >
                         <wpf:MarkdownViewer Name="MarkdownViewer"
                                             PreviewMouseDown="Ignore_OnPreviewMouseDown" 
@@ -116,14 +118,14 @@
                             <StackPanel Name="GridButtons"  Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center">
                                 <Button Name="ButtonSave"
                                         Margin="0 0 15 0"
-                                        Padding="0 1 0 0" Width="80" Height="25"
+                                        Padding="0 1 0 0" MinWidth="80" MinHeight="25"
                                         HorizontalAlignment="Left"
                                         Click="ButtonSave_OnClick"
                                         Style="{StaticResource ButtonAccentStyle}"
                                         Content="{DynamicResource Save}">
                                 </Button>
 
-                                <Button Padding="0 1 0 0" Width="80" Height="25"
+                                <Button Padding="0 1 0 0" MinWidth="80" MinHeight="25"
                                         Margin="15 0 0 0"
                                         HorizontalAlignment="Right"
                                         Click="ButtonCancelEdit_OnClick"

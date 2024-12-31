@@ -21,14 +21,15 @@
                   MouseEnter="ButtonShowNote_OnMouseEnter"
             >
                 <Path Data="{StaticResource NoteGeometry}"
-                          Width="16" Height="16"
-                          Stroke="{DynamicResource BackgroundTextBrush}"
-                          Fill="{DynamicResource BackgroundTextBrush}"
-                          StrokeThickness="0" Stretch="Uniform" />
+                      Width="16" Height="16"
+                      Stroke="{DynamicResource BackgroundTextBrush}"
+                      Fill="{DynamicResource BackgroundTextBrush}"
+                      StrokeThickness="0" Stretch="Uniform" />
             </Grid>
         </Border>
         <Grid Name="GridBriefNote" Visibility="Collapsed" MouseEnter="ButtonShowNote_OnMouseEnter">
             <TextBlock Margin="25 5 5 5" 
+                       Style="{StaticResource TextBlockBase}"
                        HorizontalAlignment="Left" 
                        MaxWidth="400"
                        Text="{Binding Server.Note, Converter={StaticResource ConverterNoteToSingleLineNote}}" 

@@ -57,7 +57,8 @@
     <s:String x:Key="Language">Język</s:String>
     <s:String x:Key="Startup">Uruchomienie</s:String>
     <s:String x:Key="Tags">Tagi</s:String>
-    <s:String x:Key="Logo">Logo</s:String>
+    <s:String x:Key="Press Enter to add a tag, which is used for grouping servers. By right-clicking on the tags on the homepage, you can filter or pin a specific tag.">Naciśnij Enter, aby dodać tag, który służy do grupowania serwerów. Klikając prawym przyciskiem myszy tagi na stronie głównej, możesz odfiltrować lub przypiąć konkretny tag.</s:String>
+    <s:String x:Key="Icon">Ikona</s:String>
     <s:String x:Key="Hostname">Nazwa komputera</s:String>
     <s:String x:Key="Target">Cel</s:String>
     <s:String x:Key="Port">Port</s:String>
@@ -124,7 +125,8 @@
     <s:String x:Key="server_editor_bulk_editing_title">Edytujesz masowo:</s:String>
     <s:String x:Key="server_editor_multi_selected_count">Ilość zaznaczonych wpisów:</s:String>
     <s:String x:Key="server_editor_group_title_common">Wszystkie</s:String>
-    <s:String x:Key="Connection">Połączenie</s:String>
+    <s:String x:Key="Connection Info">Połączenie</s:String>
+    <s:String x:Key="Connection Settings">Połączenie</s:String>
     <s:String x:Key="server_editor_group_title_display">Wyświetl</s:String>
     <s:String x:Key="server_editor_group_title_advantage">Zaawansowany</s:String>
     <s:String x:Key="server_editor_group_title_gateway">Serwer bramy RD</s:String>
@@ -137,7 +139,8 @@
     <s:String x:Key="Use private key">Użyj klucza prywatnego</s:String>
     <s:String x:Key="Private key">Klucz prywatny</s:String>
     <s:String x:Key="Open SFTP when connected">Otwórz SFTP podczas połączenia</s:String>
-    <s:String x:Key="server_editor_display_full_screen_flag">Tryb pełnoekranowy </s:String>
+    <s:String x:Key="Open SFTP">Otwórz SFTP</s:String>
+    <s:String x:Key="server_editor_display_full_screen_flag">Tryb pełnoekranowy</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_window">Dezaktywuj</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_full_screen">Aktywuj (jeden monitor)</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_all_screens">Aktywuj (kilka monitorów)</s:String>
@@ -162,7 +165,7 @@
     <s:String x:Key="server_editor_advantage_clipboard">Schowek</s:String>
     <s:String x:Key="server_editor_advantage_key_combinations">Kombinacje klawiszy</s:String>
     <s:String x:Key="server_editor_advantage_disk_drives">Dyski</s:String>
-    <s:String x:Key="Drives plug in latter">Dyski podłączone później</s:String>
+    <s:String x:Key="Drives plug in later">Dyski podłączone później</s:String>
     <s:String x:Key="server_editor_advantage_sounds">Dźwięk</s:String>
     <s:String x:Key="server_editor_advantage_sounds_disabled">Dezaktywowane</s:String>
     <s:String x:Key="server_editor_advantage_sounds_on_local">Słuchaj na lokalym</s:String>
@@ -206,7 +209,7 @@
     <s:String x:Key="guidance_feature_launcher_select">Wybierz wpisy przez</s:String>
     <s:String x:Key="guidance_feature_launcher_connect">Połącz przez</s:String>
     <s:String x:Key="guidance_feature_launcher_menu">Menu przez</s:String>
-    <s:String x:Key="guidance_feature_tab_demo">Przesuwalna, rozsuwalna, przypinalna sesja zdalna dla RDP, SSH, VNC, sFTP... </s:String>
+    <s:String x:Key="guidance_feature_tab_demo">Przesuwalna, rozsuwalna, przypinalna sesja zdalna dla RDP, SSH, VNC, sFTP...</s:String>
     <s:String x:Key="guidance_feature_start_setting1">Zatwierdź ustawienia przed pierwszym użyciem.</s:String>
     <s:String x:Key="guidance_feature_start_setting2">To ustawienie można zmienić później w Ustawieniach.</s:String>
     <s:String x:Key="Portable mode">Edycja przenośna</s:String>
@@ -308,4 +311,15 @@
     <s:String x:Key="Do you want to replace the current parameter list with preset value?">Czy chcesz zastąpić aktualną listę parametrów wartością zadaną?</s:String>
     <s:String x:Key="One option per line">Jedna opcja w każdym wierszu</s:String>
     <s:String x:Key="Use vertical lines to separate descriptions">Użyj linii pionowych, aby oddzielić opisy (wartość|opis)</s:String>
+    <s:String x:Key="Automatically focus on the content when selecting a tab">Automatycznie skupiaj uwagę na treści podczas wybierania karty</s:String>
+    <s:String x:Key="Copy the port along with the address when copying">Podczas kopiowania skopiuj port wraz z adresem</s:String>
+    <s:String x:Key="Place the close button on the left side to prevent accidental touches">Umieść przycisk zamykania po lewej stronie, aby zapobiec przypadkowym dotknięciom</s:String>
+    <s:String x:Key="Ask for password when open connect">Zapytaj o hasło przy otwieraniu połączenia</s:String>
+    <s:String x:Key="Remember the information above">Zapamiętaj powyższe informacje</s:String>
+    <s:String x:Key="Quick Connect">Szybkie połączenie</s:String>
+    <s:String x:Key="Allow Quick Connect to save entered address information">Zezwól szybkiemu połączeniu na zapisanie wprowadzonych informacji adresowych</s:String>
+    <s:String x:Key="Yes">Yes</s:String>
+    <s:String x:Key="No">No</s:String>
+    <s:String x:Key="Click on the icon above to change it to your own image">Kliknij powyższą ikonę, aby zmienić ją na swój własny obraz</s:String>
+    <s:String x:Key="Always open in new window">Zawsze otwieraj w nowym oknie</s:String>
 </ResourceDictionary>

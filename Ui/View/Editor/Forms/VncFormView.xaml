@@ -14,7 +14,7 @@
 
         <StackPanel>
 
-            <TextBlock Style="{StaticResource EditorGroupTextBlockTitle}" Text="{DynamicResource Connection}"></TextBlock>
+            <TextBlock Style="{StaticResource EditorGroupTextBlockTitle}" Text="{DynamicResource 'Connection Info'}"></TextBlock>
 
             <Grid Style="{StaticResource EditorRowGrid}">
                 <StackPanel Orientation="Horizontal">
@@ -23,7 +23,7 @@
                         <TextBox Text="{Binding New.Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                  Tag="e.g. 192.168.0.101"></TextBox>
                     </Grid>
-                    <TextBlock Style="{StaticResource EditorRowGridTitle}" Width="60" Text="{DynamicResource Port}"></TextBlock>
+                    <TextBlock Style="{StaticResource EditorRowGridTitleFollowing}" Width="60" Text="{DynamicResource Port}"></TextBlock>
                     <Grid Style="{StaticResource EditorRowGridInput}">
                         <TextBox MinWidth="50" Text="{Binding New.Port, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                  HorizontalAlignment="Left"
@@ -40,6 +40,7 @@
                     <Grid Style="{StaticResource EditorRowGridInput}">
                         <controls1:PasswordInput Height="28" Password="{Binding New.Password, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"></controls1:PasswordInput>
                     </Grid>
+                    <CheckBox Margin="5 0 0 0" Content="{DynamicResource 'Ask for password when open connect'}" IsChecked="{Binding New.AskPasswordWhenConnect}"></CheckBox>
                 </StackPanel>
             </Grid>
 
@@ -67,7 +68,7 @@
                     <TextBlock Style="{StaticResource EditorRowGridTitle}" Text=""></TextBlock>
                     <Grid Style="{StaticResource EditorRowGridInput}">
                         <StackPanel>
-                            <TextBlock TextWrapping="WrapWithOverflow" Foreground="{DynamicResource AccentMidBrush}">
+                            <TextBlock Style="{StaticResource TextBlockBase}" TextWrapping="WrapWithOverflow" Foreground="{DynamicResource AccentMidBrush}">
                                 <Run>Caution: RFB protocol over 3.8 are proprietary. If you would like using RFB 3.8+, you have to try your own VNC runner:</Run>
                                 <Hyperlink NavigateUri="https://1remote.github.io/usage/protocol/runner/" TextDecorations="{x:Null}" controls:HyperlinkHelper.IsOpenExternal="True">
                                     [More details]

@@ -20,6 +20,12 @@ namespace _1RM.View
     {
         public DataSourceBase? DataSource => Server.DataSource;
         public string DataSourceName => DataSource?.DataSourceName ?? "";
+        private string _dataSourceNameForLauncher = "";
+        public string DataSourceNameForLauncher
+        {
+            get => _dataSourceNameForLauncher;
+            set => SetAndNotifyIfChanged(ref _dataSourceNameForLauncher, value);
+        }
 
         /// <summary>
         /// Order in Main window list view
@@ -88,20 +94,20 @@ namespace _1RM.View
             get => _server;
             set
             {
-                if (_server != value)
+                //if (_server != value)
                 {
                     _server = value;
                     _server.Tags = _server.Tags.Select(x => x.ToLower()).ToList();
 
-                    if (ConverterNoteToVisibility.IsVisible(Server.Note))
+                    if (ConverterNoteToVisibility.IsVisible(_server.Note))
                     {
                         Execute.OnUIThreadSync(() =>
                         {
-                            HoverNoteDisplayControl = new NoteIcon(this.Server);
+                            HoverNoteDisplayControl = new NoteIcon(_server);
                         });
                     }
-                    LastConnectTime = LocalityConnectRecorder.Get(Server);
-                    TagString = string.Join(" ", Server.Tags.Select(x => "#" + x));
+                    LastConnectTime = LocalityConnectRecorder.ConnectTimeGet(_server);
+                    TagString = string.Join(" ", _server.Tags.Select(x => "#" + x));
                     RaisePropertyChanged(nameof(TagString));
                     ReLoadTags();
                     RaisePropertyChanged(nameof(Id));
@@ -112,12 +118,8 @@ namespace _1RM.View
                     RaisePropertyChanged(nameof(DataSource));
                     RaisePropertyChanged(nameof(IsViewable));
                     RaisePropertyChanged(nameof(IsEditable));
-                    //if (LauncherMainTitleViewModel != null)
-                    //{
-                    //    LauncherMainTitleViewModel = OrgDisplayNameControl;
-                    //    LauncherSubTitleViewModel = OrgSubTitleControl;
-                    //}
-                    _launcherMainTitleViewModel = new ServerTitleViewModel(Server.DisplayName);
+                    LauncherMainTitleViewModel = null;
+                    LauncherSubTitleViewModel = null;
                 }
                 RaisePropertyChanged();
             }
@@ -138,7 +140,7 @@ namespace _1RM.View
         }
 
         private ServerTitleViewModel? _launcherMainTitleViewModel;
-        public ServerTitleViewModel LauncherMainTitleViewModel
+        public ServerTitleViewModel? LauncherMainTitleViewModel
         {
             get => _launcherMainTitleViewModel ??= new ServerTitleViewModel(Server.DisplayName);
             private set => SetAndNotifyIfChanged(ref _launcherMainTitleViewModel, value);
@@ -146,7 +148,7 @@ namespace _1RM.View
 
 
         private ServerTitleViewModel? _launcherSubTitleViewModel = null;
-        public ServerTitleViewModel LauncherSubTitleViewModel
+        public ServerTitleViewModel? LauncherSubTitleViewModel
         {
             get => _launcherSubTitleViewModel ??= new ServerTitleViewModel(Server.SubTitle);
             private set => SetAndNotifyIfChanged(ref _launcherSubTitleViewModel, value);

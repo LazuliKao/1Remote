@@ -57,7 +57,8 @@
     <s:String x:Key="Language">语言</s:String>
     <s:String x:Key="Startup">启动</s:String>
     <s:String x:Key="Tags">标签</s:String>
-    <s:String x:Key="Logo">图标</s:String>
+    <s:String x:Key="Press Enter to add a tag, which is used for grouping servers. By right-clicking on the tags on the homepage, you can filter or pin a specific tag.">按下回车键添加一个标签，标签用于服务器分组。通过鼠标右键点击主页中的标签可签筛选或固定某个标签。</s:String>
+    <s:String x:Key="Icon">图标</s:String>
     <s:String x:Key="Hostname">地址</s:String>
     <s:String x:Key="Target">目标</s:String>
     <s:String x:Key="Port">端口</s:String>
@@ -124,7 +125,8 @@
     <s:String x:Key="server_editor_bulk_editing_title">你正在批量编辑:</s:String>
     <s:String x:Key="server_editor_multi_selected_count">选中数量：</s:String>
     <s:String x:Key="server_editor_group_title_common">常规</s:String>
-    <s:String x:Key="Connection">连接</s:String>
+    <s:String x:Key="Connection Info">连接参数</s:String>
+    <s:String x:Key="Connection Settings">连接</s:String>
     <s:String x:Key="server_editor_group_title_display">显示</s:String>
     <s:String x:Key="server_editor_group_title_advantage">高级</s:String>
     <s:String x:Key="server_editor_group_title_gateway">RD 网关服务器</s:String>
@@ -137,6 +139,7 @@
     <s:String x:Key="Use private key">使用私钥连接</s:String>
     <s:String x:Key="Private key">私钥</s:String>
     <s:String x:Key="Open SFTP when connected">同时打开 SFTP</s:String>
+    <s:String x:Key="Open SFTP">打开 SFTP</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag">全屏模式</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_window">禁用</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_full_screen">允许（单显示器）</s:String>
@@ -162,7 +165,7 @@
     <s:String x:Key="server_editor_advantage_clipboard">剪贴板</s:String>
     <s:String x:Key="server_editor_advantage_key_combinations">组合键</s:String>
     <s:String x:Key="server_editor_advantage_disk_drives">本地磁盘</s:String>
-    <s:String x:Key="Drives plug in latter">稍后插入的U盘</s:String>
+    <s:String x:Key="Drives plug in later">稍后插入的U盘</s:String>
     <s:String x:Key="server_editor_advantage_sounds">声音</s:String>
     <s:String x:Key="server_editor_advantage_sounds_disabled">禁用</s:String>
     <s:String x:Key="server_editor_advantage_sounds_on_local">在本地播放</s:String>
@@ -308,4 +311,15 @@
     <s:String x:Key="Do you want to replace the current parameter list with preset value?">是否将当前参数列表替换为预设值？</s:String>
     <s:String x:Key="One option per line">一行一个备选项</s:String>
     <s:String x:Key="Use vertical lines to separate descriptions">用竖线隔开值和描述(值|描述)</s:String>
+    <s:String x:Key="Automatically focus on the content when selecting a tab">选择 tab 后自动聚焦内容</s:String>
+    <s:String x:Key="Copy the port along with the address when copying">复制地址时同时复制端口</s:String>
+    <s:String x:Key="Place the close button on the left side to prevent accidental touches">将关闭按钮放在左侧以防止误触</s:String>
+    <s:String x:Key="Ask for password when open connect">打开连接时输入密码</s:String>
+    <s:String x:Key="Remember the information above">记住上述信息</s:String>
+    <s:String x:Key="Quick Connect">快速连接</s:String>
+    <s:String x:Key="Allow Quick Connect to save entered address information">允许`快速连接`保存输入的地址信息</s:String>
+    <s:String x:Key="Yes">是</s:String>
+    <s:String x:Key="No">否</s:String>
+    <s:String x:Key="Click on the icon above to change it to your own image">点击图标可选择本地图片</s:String>
+    <s:String x:Key="Always open in new window">总在新窗口打开</s:String>
 </ResourceDictionary>

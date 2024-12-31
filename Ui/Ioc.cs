@@ -29,10 +29,8 @@ public static class IoC
         {
             return (new MockLanguageService() as T)!;
         }
-#if !DEBUG
         if (obj == null)
             throw new Exception("Ioc can not get an item.");
-#endif
         return (T)obj!;
     }
 
@@ -52,15 +50,15 @@ public static class IoC
 
     public static string Translate(string key)
     {
-        return Get<ILanguageService>().Translate(key);
+        return TryGet<ILanguageService>()?.Translate(key) ?? key;
     }
     public static string Translate(string key, params object[] parameters)
     {
-        return Get<ILanguageService>().Translate(key, parameters);
+        return TryGet<ILanguageService>()?.Translate(key, parameters) ?? string.Format(key, parameters);
     }
 
     public static string Translate(Enum key)
     {
-        return Get<ILanguageService>().Translate(key);
+        return TryGet<ILanguageService>()?.Translate(key) ?? key.ToString();
     }
 }

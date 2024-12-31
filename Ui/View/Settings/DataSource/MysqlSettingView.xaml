@@ -15,7 +15,7 @@
                          AllowsTransparency="True"
                          d:DataContext="{d:DesignInstance local:MysqlSettingViewModel}">
     <Window.Resources>
-        <Style TargetType="TextBlock">
+        <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockBase}">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"></Setter>
             <Setter Property="VerticalAlignment" Value="Center"></Setter>
             <Setter Property="HorizontalAlignment" Value="Right"></Setter>
@@ -55,7 +55,7 @@
 
                 <StackPanel Margin="20 0" >
 
-                    <TextBlock Text="MySQL" Margin="15" FontSize="20" Height="30" HorizontalAlignment="Left"></TextBlock>
+                    <TextBlock Text="MySQL" Margin="15" FontSize="{DynamicResource GlobalFontSizeTitle}" Height="30" HorizontalAlignment="Left"></TextBlock>
 
                     <Grid>
                         <Grid.RowDefinitions>
@@ -75,34 +75,34 @@
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource 'Data Source name'}"></TextBlock>
                         <TextBox Grid.Row="0" Grid.Column="1" Name="TbName" 
-                                 Style="{DynamicResource TbInput}"
+                                 Style="{StaticResource TbInput}"
                                  Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                  />
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource Hostname}" />
                         <TextBox Grid.Row="1" Grid.Column="1" 
-                                 Style="{DynamicResource TbInput}"
+                                 Style="{StaticResource TbInput}"
                                  Text="{Binding Host, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                  />
 
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="{DynamicResource Port}"></TextBlock>
                         <TextBox Grid.Row="2" Grid.Column="1" Name="TbPort" 
-                                 Style="{DynamicResource TbInput}"
+                                 Style="{StaticResource TbInput}"
                                  Text="{Binding Port, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                  />
 
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Database"></TextBlock>
                         <TextBox Grid.Row="3" Grid.Column="1" 
-                                 Style="{DynamicResource TbInput}"
+                                 Style="{StaticResource TbInput}"
                                  Text="{Binding DatabaseName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                                  />
 
 
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="{DynamicResource User}"></TextBlock>
                         <TextBox Grid.Row="4" Grid.Column="1" 
-                                 Style="{DynamicResource TbInput}"
+                                 Style="{StaticResource TbInput}"
                                  Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True, ValidatesOnExceptions=True, ValidatesOnNotifyDataErrors=True}"
                         />
 

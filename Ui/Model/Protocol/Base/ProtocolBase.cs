@@ -1,23 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Media.Imaging;
 using _1RM.Service;
-using _1RM.Service.DataSource;
 using _1RM.Service.DataSource.Model;
 using _1RM.Utils;
-using FluentFTP.Helpers;
 using Newtonsoft.Json;
 using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.Image;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace _1RM.Model.Protocol.Base
 {
@@ -46,21 +40,20 @@ namespace _1RM.Model.Protocol.Base
             get
             {
                 if (string.IsNullOrEmpty(_id))
-                    GenerateIdForTmpSession();
+                    _id = "TMP_SESSION_" + new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
                 return _id;
             }
             set => SetAndNotifyIfChanged(ref _id, value);
         }
 
-        public bool IsTmpSession()
+        public static bool IsTmpSession(string id)
         {
-            return _id.StartsWith("TMP_SESSION_") || string.IsNullOrEmpty(_id);
+            return id.StartsWith("TMP_SESSION_") || string.IsNullOrEmpty(id);
         }
 
-        public void GenerateIdForTmpSession()
+        public bool IsTmpSession()
         {
-            Debug.Assert(IsTmpSession());
-            _id = "TMP_SESSION_" + new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
+            return IsTmpSession(Id);
         }
 
         /// <summary>
@@ -89,6 +82,13 @@ namespace _1RM.Model.Protocol.Base
         [JsonIgnore]
         public string SubTitle => GetSubTitle();
 
+
+        private bool? _alwaysOpenInNewTabWindow = false;
+        public bool? AlwaysOpenInNewTabWindow
+        {
+            get => _alwaysOpenInNewTabWindow;
+            set => SetAndNotifyIfChanged(ref _alwaysOpenInNewTabWindow, value);
+        }
 
         // ReSharper disable once ArrangeObjectCreationWhenTypeEvident
         private List<string> _tags = new List<string>();
@@ -327,6 +327,7 @@ namespace _1RM.Model.Protocol.Base
                     exitCode = WinCmdRunner.RunFile(tuple.Item1, arguments: tuple.Item2, isAsync: false,
                         isHideWindow: HideCommandBeforeConnectedWindow && isTestRun != true,
                         workingDirectory: tuple.Item3,
+                        useShellExcute: tuple.Item4,
                         envVariables: GetEnvironmentVariablesForScript());
 
                     if (isTestRun)
@@ -363,6 +364,7 @@ namespace _1RM.Model.Protocol.Base
                     var exitCode = WinCmdRunner.RunFile(tuple.Item1, arguments: tuple.Item2, isAsync: true,
                         isHideWindow: isTestRun != true,
                         workingDirectory: tuple.Item3,
+                        useShellExcute: tuple.Item4,
                         envVariables: GetEnvironmentVariablesForScript());
 
                     if (isTestRun)
@@ -409,15 +411,13 @@ namespace _1RM.Model.Protocol.Base
         public DataSourceBase? DataSource { get; set; }
 
         /// <summary>
-        /// check if every value is ok
+        /// build the id for host
         /// </summary>
-        public virtual bool Verify()
+        /// <returns></returns>
+        public virtual string BuildConnectionId()
         {
-            if (string.IsNullOrEmpty(DisplayName))
-                return false;
-            return true;
+            return Id;
         }
-
 
         #region IDataErrorInfo
         [JsonIgnore] public string Error => "";
@@ -442,5 +442,12 @@ namespace _1RM.Model.Protocol.Base
             }
         }
         #endregion
+
+        [JsonIgnore]
+        public string HelpUrl => GetHelpUrl();
+        public virtual string GetHelpUrl()
+        {
+            return "";
+        }
     }
 }

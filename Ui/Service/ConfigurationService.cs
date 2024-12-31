@@ -17,6 +17,7 @@ using Shawn.Utils.Wpf;
 using VariableKeywordMatcher.Provider.DirectMatch;
 using SetSelfStartingHelper = _1RM.Utils.SetSelfStartingHelper;
 using Google.Protobuf.WellKnownTypes;
+using System.Windows.Media;
 
 namespace _1RM.Service
 {
@@ -47,6 +48,9 @@ namespace _1RM.Service
 
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool TabHeaderShowIconButton = true;
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool TabHeaderShowCloseButton = true;
         [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -55,7 +59,23 @@ namespace _1RM.Service
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool ShowRecentlySessionInTray = false;
         public bool ShowNoteFieldInListView = true;
+
+        public int LogLevel = (int)SimpleLogHelper.EnumLogLevel.Warning;
         #endregion
+
+        // Misc
+        //[DefaultValue(true)]
+        //[JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        //public bool TabAutoFocusContent= true;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool CopyPortWhenCopyAddress = true;
+
+
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool TabWindowCloseButtonOnLeft = false;
     }
 
     public class LauncherConfig
@@ -73,6 +93,9 @@ namespace _1RM.Service
         public bool ShowNoteFieldInLauncher = true;
         public bool ShowCredentials = true;
         public bool IsMatchingCredentials = true;
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool AllowSaveInfoInQuickConnect = true;
     }
 
     public class KeywordMatchConfig
@@ -110,6 +133,9 @@ namespace _1RM.Service
         public string BackgroundColor = "#1e1e1e";
         public string BackgroundTextColor = "#cccccc";
 
+        public string FontFamily = "Microsoft YaHei";
+        public int FontSize = 12;
+
         #region GetColor
         public System.Windows.Media.Color GetPrimaryMidColor => ColorAndBrushHelper.HexColorToMediaColor(PrimaryMidColor);
         public System.Windows.Media.Color GetPrimaryLightColor => ColorAndBrushHelper.HexColorToMediaColor(PrimaryLightColor);
@@ -144,10 +170,28 @@ namespace _1RM.Service
         public ThemeConfig Theme { get; set; } = new ThemeConfig();
         public EngagementSettings Engagement { get; set; } = new EngagementSettings();
         public List<string> PinnedTags { get; set; } = new List<string>();
-        public static Configuration Load(string path)
+        public static Configuration? Load(string path)
         {
             var tmp = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(path));
-            return tmp ?? new Configuration();
+            tmp?.RegulateTheme();
+            return tmp;
+        }
+
+        private void RegulateTheme()
+        {
+            if (string.IsNullOrEmpty(Theme.ThemeName))
+                Theme.ThemeName = "Dark";
+
+            if (Theme.FontSize < 10)
+                Theme.FontSize = 10;
+            if (Theme.FontSize > 20)
+                Theme.FontSize = 20;
+
+            var ff = Theme.FontFamily;
+            var f = Fonts.SystemFontFamilies.FirstOrDefault(x => string.Equals(x.Source, ff, StringComparison.CurrentCultureIgnoreCase)) ??
+                    Fonts.SystemFontFamilies.FirstOrDefault(x => x.Source.EndsWith("YaHei", StringComparison.OrdinalIgnoreCase)) ??
+                    Fonts.SystemFontFamilies.First();
+            Theme.FontFamily = f.Source;
         }
     }
 
@@ -228,11 +272,14 @@ namespace _1RM.Service
             AvailableMatcherProviders.First(x => x.Name == DirectMatchProvider.GetName()).IsEditable = false;
             KeywordMatch.EnabledMatchers = AvailableMatcherProviders.Where(x => x.Enabled).Select(x => x.Name).ToList();
             _keywordMatchService.Init(KeywordMatch.EnabledMatchers.ToArray());
+
             // register matcher change event
             foreach (var info in AvailableMatcherProviders)
             {
                 info.PropertyChanged += OnMatchProviderChangedHandler;
             }
+
+            // 
 
 
             AdditionalDataSource = DataSourceService.AdditionalSourcesLoadFromProfile(AppPathHelper.Instance.ProfileAdditionalDataSourceJsonPath);
@@ -282,14 +329,13 @@ namespace _1RM.Service
             SetSelfStartingHelper.SetSelfStart(isInstall, Assert.APP_NAME);
         }
 
-
         public static ConfigurationService LoadFromAppPath(KeywordMatchService keywordMatchService)
         {
             var cfg = new Configuration();
 
             if (File.Exists(AppPathHelper.Instance.ProfileJsonPath))
             {
-                var tmp = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(AppPathHelper.Instance.ProfileJsonPath));
+                var tmp = Configuration.Load(AppPathHelper.Instance.ProfileJsonPath);
                 if (tmp != null)
                     cfg = tmp;
             }

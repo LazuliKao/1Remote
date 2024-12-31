@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using _1RM.Utils.WindowsApi;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AppCenter;
 using Microsoft.AppCenter.Analytics;
 using Microsoft.AppCenter.Crashes;
+using MySqlX.XDevAPI.Common;
 using Shawn.Utils;
 
 /*
@@ -22,13 +25,12 @@ namespace _1RM.Utils
     /// </summary>
     public static class MsAppCenterHelper
     {
-        private static bool _isStarted = false;
+        private static bool _hasInit = false;
         public static void Init(string secret)
         {
             // disabled for OS under Win10
             if (WindowsVersionHelper.IsLowerThanWindows10())
                 return;
-#if !DEBUG
             AppCenter.LogLevel = LogLevel.Verbose;
             if (secret?.Length == "********-****-****-****-************".Length
                 && "********-****-****-****-************".ToList()
@@ -38,32 +40,52 @@ namespace _1RM.Utils
             {
                 SimpleLogHelper.Debug(nameof(MsAppCenterHelper) + " init...");
                 AppCenter.Start(secret, typeof(Analytics), typeof(Crashes));
-                _isStarted = true;
+                _hasInit = true;
             }
-#endif
         }
 
-        public static void Error(Exception e, IDictionary<string, string>? properties = null, List<ErrorAttachmentLog>? attachments = null)
+        public static void Error(Exception e, IDictionary<string, string>? properties = null, Dictionary<string, string>? attachments = null)
         {
-#if DEBUG
-            return;
-#else
-            if (_isStarted == false) { return; }
+            if (_hasInit == false) { return; }
             properties ??= new Dictionary<string, string>();
             if (!properties.ContainsKey("Version"))
                 properties.Add("Version", AppVersion.Version);
-            if (attachments != null)
-                Crashes.TrackError(e, properties, attachments.ToArray());
-            else
-                Crashes.TrackError(e, properties);
-#endif
+            if (!properties.ContainsKey("BuildDate"))
+                properties.Add("BuildDate", AppVersion.BuildDate);
+
+            if (properties.ContainsKey("StackTrace") == false)
+                try
+                {
+                    string message = "";
+                    var stacktrace = new StackTrace();
+                    for (var i = 0; i < stacktrace.FrameCount; i++)
+                    {
+                        var frame = stacktrace.GetFrame(i);
+                        if (frame == null) continue;
+                        message += frame.GetMethod() + " -> " + frame.GetFileName() + ": " + frame.GetFileLineNumber() + "\r\n";
+                    }
+                    properties.Add("StackTrace", message);
+                }
+                catch
+                {
+                    // ignore
+                }
+
+            var list = new List<ErrorAttachmentLog>();
+            foreach (var kv in attachments ?? new Dictionary<string, string>())
+            {
+                list.Add(ErrorAttachmentLog.AttachmentWithText(kv.Value, kv.Key));
+            }
+            Crashes.TrackError(e, properties, list.ToArray());
+
+            SentryIoHelper.Error(e, properties, attachments);
         }
 
 
 
         private static void Trace(EventName eventName, Dictionary<string, string> properties)
         {
-            if (_isStarted == false) { return; }
+            if (_hasInit == false) { return; }
 #if DEBUG
             Analytics.TrackEvent(eventName.ToString() + "_Debug", properties);
 #else
@@ -84,6 +106,7 @@ namespace _1RM.Utils
                 properties.Add("Version", isStoreVersion == true ? "MS Store" : "Exe");
             }
             Trace(EventName.App, properties);
+            SentryIoHelper.TraceAppStatus(isStart, isStoreVersion);
         }
 
         public static void TraceView(string viewName, bool isShow)
@@ -93,6 +116,7 @@ namespace _1RM.Utils
                 { "View", (isShow ? "Show":"Hide") + viewName },
             };
             Trace(EventName.View, properties);
+            SentryIoHelper.TraceView(viewName, isShow);
         }
 
 
@@ -106,28 +130,35 @@ namespace _1RM.Utils
                 { "Via", via },
             };
             Trace(EventName.SessionConnect, properties);
+            SentryIoHelper.TraceSessionOpen(protocol, via);
         }
 
 
         public static void TraceSessionEdit(string protocol)
         {
-            if (_isStarted == false) { return; }
+            if (_hasInit == false) { return; }
             var properties = new Dictionary<string, string>
             {
                 { "Protocol", protocol },
             };
             Trace(EventName.SessionEdit, properties);
+            SentryIoHelper.TraceSessionEdit(protocol);
         }
 
 
+        public static void TraceSpecial(Dictionary<string, string> kys)
+        {
+            if (_hasInit == false) { return; }
+            Trace(EventName.Special, kys);
+            SentryIoHelper.TraceSpecial(kys);
+        }
         public static void TraceSpecial(string key, string value)
         {
-            if (_isStarted == false) { return; }
             var properties = new Dictionary<string, string>
             {
                 { key, value},
             };
-            Trace(EventName.Special, properties);
+            TraceSpecial(properties);
         }
     }
 

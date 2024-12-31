@@ -40,6 +40,9 @@ namespace _1RM.View.Launcher
             }
         }
 
+        /// <summary>
+        /// to identify if any key is pressed after list is shown, except Tab key, if true, then auto fill selected item info into quick connection
+        /// </summary>
         public bool AnyKeyExceptTabPressAfterShow = false;
         public void Show()
         {
@@ -55,6 +58,8 @@ namespace _1RM.View.Launcher
                 view.TbKeyWord.Focus();
             });
             CalcNoteFieldVisibility();
+            AnyKeyExceptTabPressAfterShow = false;
+            SelectedIndex = 0;
         }
 
         private readonly DebounceDispatcher _debounceDispatcher = new();
@@ -102,7 +107,6 @@ namespace _1RM.View.Launcher
             {
                 if (SetAndNotifyIfChanged(ref _selectedIndex, value))
                 {
-                    RaisePropertyChanged(nameof(SelectedItem));
                     CalcNoteFieldVisibility();
                     if (SelectedItem != null && this.View is ServerSelectionsView view)
                     {
@@ -118,6 +122,7 @@ namespace _1RM.View.Launcher
                             }
                         });
                     }
+                    RaisePropertyChanged(nameof(SelectedItem));
                 }
             }
         }
@@ -138,6 +143,7 @@ namespace _1RM.View.Launcher
                 {
                     SelectedIndex = -1;
                 }
+                RaisePropertyChanged(nameof(SelectedItem));
             }
         }
 
@@ -170,8 +176,8 @@ namespace _1RM.View.Launcher
             {
                 viewModel.PropertyChanged -= OnLastConnectTimeChanged;
                 viewModel.PropertyChanged += OnLastConnectTimeChanged;
-                viewModel.LauncherMainTitleViewModel.UnHighLightAll();
-                viewModel.LauncherSubTitleViewModel.UnHighLightAll();
+                viewModel.LauncherMainTitleViewModel?.UnHighLightAll();
+                viewModel.LauncherSubTitleViewModel?.UnHighLightAll();
                 VmServerList.Add(viewModel);
             });
         }
@@ -203,8 +209,8 @@ namespace _1RM.View.Launcher
 
             foreach (var viewModel in VmServerList)
             {
-                viewModel.LauncherMainTitleViewModel.UnHighLightAll();
-                viewModel.LauncherSubTitleViewModel.UnHighLightAll();
+                viewModel.LauncherMainTitleViewModel?.UnHighLightAll();
+                viewModel.LauncherSubTitleViewModel?.UnHighLightAll();
             }
             IoC.Get<LauncherWindowViewModel>().ReSetWindowHeight();
         }
@@ -273,53 +279,55 @@ namespace _1RM.View.Launcher
             var matchResults = TagAndKeywordEncodeHelper.MatchKeywords(servers.Select(x => x.Server).ToList(), tmp, ShowCredentials);
             for(int i =0; i < servers.Count; i++)
             {
-                var vm = servers[i];
-                vm.KeywordMark = double.MinValue;
+                var server = servers[i];
+                server.KeywordMark = double.MinValue;
                 var matchResult = matchResults[i];
                 if (matchResult.Item1 != true) continue;
-                newList.Add(vm);
+                newList.Add(server);
                 if (matchResult.Item2 == null)
                 {
-                    // no highlight
-                    vm.LauncherMainTitleViewModel.UnHighLightAll();
+                    // no highlight for this server
+                    server.LauncherMainTitleViewModel?.UnHighLightAll();
                     if (ShowCredentials)
-                        vm.LauncherSubTitleViewModel.UnHighLightAll();
-                    vm.KeywordMark = 0;
-                    return;
-                }
-                var mrs = matchResult.Item2;
-                var m1 = mrs.HitFlags[0];
-
-                // highlight and order by keyword match count
-                vm.KeywordMark = 0;
-                foreach (var kw in mrs.Keywords)
-                {
-                    if(vm.DisplayName.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
-                        vm.KeywordMark += 10;
-                    if (ShowCredentials && vm.SubTitle.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
-                        vm.KeywordMark += 1;
-                }
-
-
-                if (m1.Any(x => x == true))
-                {
-                    vm.LauncherMainTitleViewModel.HighLight(m1);
+                        server.LauncherSubTitleViewModel?.UnHighLightAll();
+                    server.KeywordMark = 0;
                 }
                 else
                 {
-                    vm.LauncherMainTitleViewModel.UnHighLightAll();
-                }
+                    // calc highlight for this server
+                    var mrs = matchResult.Item2;
+                    var m1 = mrs.HitFlags[0];
 
-                if (ShowCredentials)
-                {
-                    var m2 = mrs.HitFlags[1];
-                    if (m2.Any(x => x == true))
+                    // highlight and order by keyword match count
+                    server.KeywordMark = 0;
+                    foreach (var kw in mrs.Keywords)
                     {
-                        vm.LauncherSubTitleViewModel.HighLight(m2);
+                        if (server.DisplayName.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
+                            server.KeywordMark += 10;
+                        if (ShowCredentials && server.SubTitle.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
+                            server.KeywordMark += 1;
+                    }
+
+                    if (m1.Any(x => x == true))
+                    {
+                        server.LauncherMainTitleViewModel?.HighLight(m1);
                     }
                     else
                     {
-                        vm.LauncherSubTitleViewModel.UnHighLightAll();
+                        server.LauncherMainTitleViewModel?.UnHighLightAll();
+                    }
+
+                    if (ShowCredentials)
+                    {
+                        var m2 = mrs.HitFlags[1];
+                        if (m2.Any(x => x == true))
+                        {
+                            server.LauncherSubTitleViewModel?.HighLight(m2);
+                        }
+                        else
+                        {
+                            server.LauncherSubTitleViewModel?.UnHighLightAll();
+                        }
                     }
                 }
             }

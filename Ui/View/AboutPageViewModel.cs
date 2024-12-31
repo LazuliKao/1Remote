@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Timers;
 using _1RM.Service;
+using _1RM.Utils;
 using _1RM.View.Utils;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
@@ -12,7 +13,7 @@ using Stylet;
 
 namespace _1RM.View
 {
-    public class AboutPageViewModel : NotifyPropertyChangedBase
+    public class AboutPageViewModel : NotifyPropertyChangedBaseScreen
     {
         private readonly Timer _checkUpdateTimer;
 
@@ -43,21 +44,27 @@ namespace _1RM.View
             if (ret.NewerPublished)
                 return ret;
 
-            var mc = Regex.Matches(html, @".?1remote-([\d|\.]*.*)-net6", RegexOptions.IgnoreCase);
-            if (mc.Count > 0)
+            var patterns = new List<string>()
             {
-                var versionString = mc[mc.Count - 1].Groups[1].Value;
-                var releasedVersion = VersionHelper.Version.FromString(versionString);
-                if (ignoreVersion is not null)
-                {
-                    if (releasedVersion <= ignoreVersion)
-                    {
-                        return VersionHelper.CheckUpdateResult.False();
-                    }
-                }
-                if (releasedVersion > currentVersion)
-                    return new VersionHelper.CheckUpdateResult(true, versionString, publishUrl, versionString.FirstOrDefault() == '!' || versionString.LastOrDefault() == '!');
-            }
+	            @".?1remote-([\d|\.]*.*)-net",
+	            @".?latest\sversion:\s*([\d|.]*)",
+            };
+            foreach (var pattern in patterns)
+			{
+				var mc = Regex.Matches(html, pattern, RegexOptions.IgnoreCase);
+				if (mc.Count <= 0) continue;
+				var versionString = mc[0].Groups[1].Value;
+				var releasedVersion = VersionHelper.Version.FromString(versionString);
+				if (ignoreVersion is not null)
+				{
+					if (releasedVersion <= ignoreVersion)
+					{
+						return VersionHelper.CheckUpdateResult.False();
+					}
+				}
+				if (releasedVersion > currentVersion)
+					return new VersionHelper.CheckUpdateResult(true, versionString, publishUrl, versionString.FirstOrDefault() == '!' || versionString.LastOrDefault() == '!');
+			}
             return VersionHelper.CheckUpdateResult.False();
         }
 
@@ -117,7 +124,7 @@ namespace _1RM.View
             {
                 return _cmdClose ??= new RelayCommand((o) =>
                 {
-                    IoC.Get<MainWindowViewModel>().ShowList(false);
+                    this.RequestClose(false);
                 });
             }
         }

@@ -15,6 +15,7 @@ using Stylet;
 using ProtocolHostStatus = _1RM.View.Host.ProtocolHosts.ProtocolHostStatus;
 using _1RM.Service.DataSource;
 using _1RM.Service.Locality;
+using _1RM.Service.DataSource.DAO.Dapper;
 
 namespace _1RM.Service
 {
@@ -53,7 +54,7 @@ namespace _1RM.Service
         private string _lastTabToken = "";
 
         private readonly object _dictLock = new object();
-        private readonly ConcurrentDictionary<string, TabWindowBase> _token2TabWindows = new ConcurrentDictionary<string, TabWindowBase>();
+        private readonly ConcurrentDictionary<string, TabWindowView> _token2TabWindows = new ConcurrentDictionary<string, TabWindowView>();
         private readonly ConcurrentDictionary<string, HostBase> _connectionId2Hosts = new ConcurrentDictionary<string, HostBase>();
         private readonly ConcurrentDictionary<string, FullScreenWindowView> _connectionId2FullScreenWindows = new ConcurrentDictionary<string, FullScreenWindowView>();
         private readonly ConcurrentQueue<HostBase> _hostToBeDispose = new ConcurrentQueue<HostBase>();
@@ -73,22 +74,9 @@ namespace _1RM.Service
         public ConcurrentDictionary<string, HostBase> ConnectionId2Hosts => _connectionId2Hosts;
 
 
-        private void OnRequestOpenConnection(in ProtocolBase? serverOrg, in string fromView, in string assignTabToken = "", in string assignRunnerName = "", in string assignCredentialName = "")
+        private void OnRequestOpenConnection(in ProtocolBase serverOrg, in string fromView, in string assignTabToken = "", in string assignRunnerName = "", in string assignCredentialName = "")
         {
             CleanupProtocolsAndWindows();
-            #region START MULTIPLE SESSION
-            // if server == null, then start multiple sessions
-            if (serverOrg == null)
-            {
-                var list = _appData.VmItemList
-                    .Where(x => x.IsSelected)
-                    .Select(x => x.Server)
-                    .ToArray();
-                OnRequestOpenConnection(list, in fromView, in assignTabToken, in assignRunnerName, in assignCredentialName);
-                MsAppCenterHelper.TraceSessionOpen($"multiple sessions ({((list.Length >= 5) ? ">=5" : list.Length.ToString())})", fromView);
-                return;
-            }
-            #endregion
 
             var org = serverOrg;
             var view = fromView;
@@ -136,35 +124,29 @@ namespace _1RM.Service
         }
 
 
-        private bool ActivateOrReConnIfServerSessionIsOpened(in ProtocolBase server, Credential? assignCredential)
+        private bool ActivateOrReConnIfServerSessionIsOpened(in ProtocolBase server)
         {
-            var serverId = server.Id;
+            if (!server.IsOnlyOneInstance()) return false;
+            var connectionId = server.BuildConnectionId();
             // if is OnlyOneInstance Protocol and it is connected now, activate it and return.
-            if (!server.IsOnlyOneInstance() || !_connectionId2Hosts.ContainsKey(serverId)) return false;
-            if (assignCredential != null)
-            {
-                if (_connectionId2Hosts[serverId].ProtocolServer is ProtocolBaseWithAddressPort p
-                    && assignCredential.Address != p.Address)
-                    return false;
-                if (_connectionId2Hosts[serverId].ProtocolServer is ProtocolBaseWithAddressPortUserPwd p2
-                    && assignCredential.UserName != p2.UserName)
-                    return false;
-            }
+            if (!_connectionId2Hosts.ContainsKey(connectionId))
+                return false;
 
-            SimpleLogHelper.Debug($"_connectionId2Hosts ContainsKey {serverId}");
+            SimpleLogHelper.Debug($"_connectionId2Hosts ContainsKey {connectionId}");
             // Activate
-            if (_connectionId2Hosts[serverId].ParentWindow is { } win)
+            if (_connectionId2Hosts[connectionId].ParentWindow is { } win)
             {
-                if (win is TabWindowBase tab)
+                if (win is TabWindowView tab)
                 {
-                    var s = tab.GetViewModel().Items.FirstOrDefault(x => x.Content?.ProtocolServer?.Id == serverId);
+                    var serverId = server.Id;
+                    var s = tab.GetViewModel().Items.FirstOrDefault(x => x.Content?.ProtocolServer?.BuildConnectionId() == connectionId);
                     if (s != null)
                         tab.GetViewModel().SelectedItem = s;
                 }
 
                 if (win.IsClosed)
                 {
-                    MarkProtocolHostToClose(new string[] { serverId.ToString() });
+                    MarkProtocolHostToClose(new string[] { connectionId });
                     CleanupProtocolsAndWindows();
                     return false;
                 }
@@ -180,21 +162,21 @@ namespace _1RM.Service
                     });
 
                     var vmServer = _appData.GetItemById(server.DataSource?.DataSourceName ?? "", server.Id);
-                    vmServer?.UpdateConnectTime();
+                    vmServer?.ConnectTimeAddOrUpdate();
                 }
                 catch (Exception e)
                 {
                     SimpleLogHelper.Error(e);
-                    MarkProtocolHostToClose(new string[] { serverId.ToString() });
+                    MarkProtocolHostToClose(new string[] { connectionId });
                     CleanupProtocolsAndWindows();
                 }
             }
 
             // Reconnect
-            if (_connectionId2Hosts[serverId].ParentWindow != null)
+            if (_connectionId2Hosts[connectionId].ParentWindow != null)
             {
-                if (_connectionId2Hosts[serverId].Status != ProtocolHostStatus.Connected)
-                    _connectionId2Hosts[serverId].ReConn();
+                if (_connectionId2Hosts[connectionId].Status != ProtocolHostStatus.Connected)
+                    _connectionId2Hosts[connectionId].ReConn();
             }
             return true;
         }

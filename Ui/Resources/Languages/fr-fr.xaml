@@ -57,7 +57,8 @@
     <s:String x:Key="Language">Langue</s:String>
     <s:String x:Key="Startup">Commencez</s:String>
     <s:String x:Key="Tags">Mots clés</s:String>
-    <s:String x:Key="Logo">Logo</s:String>
+    <s:String x:Key="Press Enter to add a tag, which is used for grouping servers. By right-clicking on the tags on the homepage, you can filter or pin a specific tag.">Appuyez sur Entrée pour ajouter une balise utilisée pour regrouper les serveurs. En cliquant avec le bouton droit sur les balises de la page d'accueil, vous pouvez filtrer ou épingler une balise spécifique.</s:String>
+    <s:String x:Key="Icon">Icône</s:String>
     <s:String x:Key="Hostname">Nom d'hôte</s:String>
     <s:String x:Key="Target">Cibler</s:String>
     <s:String x:Key="Port">Port</s:String>
@@ -124,7 +125,8 @@
     <s:String x:Key="server_editor_bulk_editing_title">Vous modifiez en masse :</s:String>
     <s:String x:Key="server_editor_multi_selected_count">Nombre d'éléments sélectionnés:</s:String>
     <s:String x:Key="server_editor_group_title_common">Commun</s:String>
-    <s:String x:Key="Connection">Connexion</s:String>
+    <s:String x:Key="Connection Info">Informations de connexion</s:String>
+    <s:String x:Key="Connection Settings">Connexion</s:String>
     <s:String x:Key="server_editor_group_title_display">Affichage</s:String>
     <s:String x:Key="server_editor_group_title_advantage">Avantage</s:String>
     <s:String x:Key="server_editor_group_title_gateway">Serveur de passerelle RD</s:String>
@@ -137,6 +139,7 @@
     <s:String x:Key="Use private key">utiliser la clé privée</s:String>
     <s:String x:Key="Private key">Clé privée</s:String>
     <s:String x:Key="Open SFTP when connected">Ouvrir SFTP lorsqu'il est connecté</s:String>
+    <s:String x:Key="Open SFTP">Ouvrir SFTP</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag">Plein écran</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_window">Désactiver</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_full_screen">Activer (moniteur unique)</s:String>
@@ -162,7 +165,7 @@
     <s:String x:Key="server_editor_advantage_clipboard">Presse-papiers</s:String>
     <s:String x:Key="server_editor_advantage_key_combinations">Combinaisons de clés</s:String>
     <s:String x:Key="server_editor_advantage_disk_drives">Disques durs</s:String>
-    <s:String x:Key="Drives plug in latter">Drives plug in latter</s:String>
+    <s:String x:Key="Drives plug in later">Drives plug in later</s:String>
     <s:String x:Key="server_editor_advantage_sounds">Sons</s:String>
     <s:String x:Key="server_editor_advantage_sounds_disabled">Désactivée</s:String>
     <s:String x:Key="server_editor_advantage_sounds_on_local">Jouez en local</s:String>
@@ -308,4 +311,15 @@
     <s:String x:Key="Do you want to replace the current parameter list with preset value?">Voulez-vous remplacer la liste de paramètres actuelle par une valeur prédéfinie ?</s:String>
     <s:String x:Key="One option per line">Une option par ligne</s:String>
     <s:String x:Key="Use vertical lines to separate descriptions">Utilisez des lignes verticales pour séparer les descriptions (valeur | description)</s:String>
+    <s:String x:Key="Automatically focus on the content when selecting a tab">Se concentrer automatiquement sur le contenu lors de la sélection d'un onglet</s:String>
+    <s:String x:Key="Copy the port along with the address when copying">Copiez le port avec l'adresse lors de la copie</s:String>
+    <s:String x:Key="Place the close button on the left side to prevent accidental touches">Placez le bouton de fermeture sur le côté gauche pour éviter les contacts accidentels</s:String>
+    <s:String x:Key="Ask for password when open connect">Demander un mot de passe lors de l'ouverture de la connexion</s:String>
+    <s:String x:Key="Remember the information above">N'oubliez pas les informations ci-dessus</s:String>
+    <s:String x:Key="Quick Connect">Connexion rapide</s:String>
+    <s:String x:Key="Allow Quick Connect to save entered address information">Autoriser Quick Connect à enregistrer les informations d'adresse saisies</s:String>
+    <s:String x:Key="Yes">Yes</s:String>
+    <s:String x:Key="No">No</s:String>
+    <s:String x:Key="Click on the icon above to change it to your own image">Cliquez sur l'icône ci-dessus pour la remplacer par votre propre image</s:String>
+    <s:String x:Key="Always open in new window">Toujours ouvrir dans une nouvelle fenêtre</s:String>
 </ResourceDictionary>

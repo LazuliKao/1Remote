@@ -113,8 +113,7 @@ namespace _1RM.Model
         /// reload data based on `LastReadFromDataSourceMillisecondsTimestamp` and `DataSourceDataUpdateTimestamp`
         /// return true if read data
         /// </summary>
-        /// <param name="focus"></param>
-        public bool ReloadServerList(bool focus = false)
+        public bool ReloadServerList(bool force = false)
         {
             try
             {
@@ -125,7 +124,7 @@ namespace _1RM.Model
 
 
                 var needRead = false;
-                if (focus == false)
+                if (force == false)
                 {
                     needRead = _sourceService.LocalDataSource?.NeedRead() ?? false;
                     foreach (var additionalSource in _sourceService.AdditionalSources)
@@ -133,7 +132,7 @@ namespace _1RM.Model
                         // 断线的数据源，除非强制读取，否则都忽略，断线的数据源在 timer 里会自动重连
                         if (additionalSource.Value.Status != EnumDatabaseStatus.OK)
                         {
-                            if (!focus) continue;
+                            if (!force) continue;
                             additionalSource.Value.Database_SelfCheck();
                         }
 
@@ -144,36 +143,13 @@ namespace _1RM.Model
                     }
                 }
 
-                if (focus || needRead)
+                if (force || needRead)
                 {
                     // read from db
-                    VmItemList = _sourceService.GetServers(focus);
-                    LocalityConnectRecorder.Cleanup();
+                    VmItemList = _sourceService.GetServers(force);
+                    LocalityConnectRecorder.ConnectTimeCleanup();
                     ReadTagsFromServers();
                     OnDataReloaded?.Invoke();
-
-                    // old app turning to new app protocol, todo: remove after 2024
-                    foreach (var viewModel in VmItemList)
-                    {
-                        if (viewModel.Server is LocalApp app)
-                        {
-                            if (app.ArgumentList.Count == 0 && !string.IsNullOrEmpty(app.Arguments))
-                            {
-                                app.ArgumentList.Add(new AppArgument()
-                                {
-                                    Name = "Arg",
-                                    Key = "",
-                                    Type = AppArgumentType.Normal,
-                                    AddBlankAfterValue = false,
-                                    AddBlankAfterKey = false,
-                                    IsNullable = true,
-                                    Value = app.Arguments,
-                                });
-                                app.Arguments = "";
-                                UpdateServer(app);
-                            }
-                        }
-                    }
                     return true;
                 }
 
@@ -205,25 +181,25 @@ namespace _1RM.Model
             if (ret.IsSuccess)
             {
                 var @new = new ProtocolBaseViewModel(protocolServer);
+                @new.DataSourceNameForLauncher = _sourceService?.AdditionalSources.Any() == true ? protocolServer?.DataSource?.DataSourceName ?? "" : "";
                 if (needReload == false)
                 {
                     VmItemList.Add(@new);
                     IoC.Get<ServerListPageViewModel>()?.AppendServer(@new); // invoke main list ui change
                     IoC.Get<ServerSelectionsViewModel>()?.AppendServer(@new); // invoke launcher ui change
-
-
                     if (dataSource != IoC.Get<DataSourceService>().LocalDataSource
                         && IoC.Get<DataSourceService>().AdditionalSources.Select(x => x.Value.CachedProtocols.Count).Sum() <= 1)
                     {
                         // if is additional database and need to set up group by database name!
                         IoC.Get<ServerListPageViewModel>().ApplySort();
                     }
+                    IoC.Get<ServerListPageViewModel>().RefreshCollectionViewSource(true);
                 }
             }
 
             if (needReload)
             {
-                ReloadServerList(focus: true);
+                ReloadServerList(force: true);
             }
             else
             {
@@ -264,7 +240,10 @@ namespace _1RM.Model
                         // invoke main list ui change & invoke launcher ui change
                         var old = GetItemById(source.DataSourceName, protocolServer.Id);
                         if (old != null)
+                        {
                             old.Server = protocolServer;
+                            old.DataSourceNameForLauncher = _sourceService?.AdditionalSources.Any() == true ? old.DataSourceName : "";
+                        }
                         ReadTagsFromServers();
                         IoC.Get<ServerListPageViewModel>().ClearSelection();
                     }
@@ -291,7 +270,7 @@ namespace _1RM.Model
                     var source = groupedServer.First().DataSource;
                     if (source?.IsWritable != true)
                     {
-                        failMessages.Add($"Can not update on DataSource({ source?.DataSourceName ?? "null"}) since it is not writable.");
+                        failMessages.Add($"Can not update on DataSource({source?.DataSourceName ?? "null"}) since it is not writable.");
                         continue;
                     }
                     needReload |= source.NeedRead();
@@ -311,7 +290,9 @@ namespace _1RM.Model
                         var old = GetItemById(source.DataSourceName, protocolServer.Id);
                         // invoke main list ui change & invoke launcher ui change
                         if (old != null)
+                        {
                             old.Server = protocolServer;
+                            old.DataSourceNameForLauncher = _sourceService?.AdditionalSources.Any() == true ? old.DataSourceName : ""; }
                     }
                 }
 
@@ -480,7 +461,7 @@ namespace _1RM.Model
                 var listPageViewModel = IoC.TryGet<ServerListPageViewModel>();
                 var launcherWindowViewModel = IoC.TryGet<LauncherWindowViewModel>();
 
-                if(mainWindowViewModel == null
+                if (mainWindowViewModel == null
                    || listPageViewModel == null
                    || launcherWindowViewModel == null)
                     return;

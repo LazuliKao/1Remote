@@ -57,7 +57,8 @@
     <s:String x:Key="Language">Jazyk</s:String>
     <s:String x:Key="Startup">Při startu</s:String>
     <s:String x:Key="Tags">Štítky</s:String>
-    <s:String x:Key="Logo">Logo</s:String>
+    <s:String x:Key="Press Enter to add a tag, which is used for grouping servers. By right-clicking on the tags on the homepage, you can filter or pin a specific tag.">Stisknutím klávesy Enter přidáte značku, která se používá pro seskupování serverů. Kliknutím pravým tlačítkem na štítky na domovské stránce můžete filtrovat nebo připnout konkrétní štítek.</s:String>
+    <s:String x:Key="Icon">Icon</s:String>
     <s:String x:Key="Hostname">Název stroje</s:String>
     <s:String x:Key="Target">Cíl</s:String>
     <s:String x:Key="Port">Port</s:String>
@@ -124,7 +125,8 @@
     <s:String x:Key="server_editor_bulk_editing_title">Hromadně upravujete:</s:String>
     <s:String x:Key="server_editor_multi_selected_count">Počet vybraných položek:</s:String>
     <s:String x:Key="server_editor_group_title_common">Společné</s:String>
-    <s:String x:Key="Connection">Připojení</s:String>
+    <s:String x:Key="Connection Info">Připojení</s:String>
+    <s:String x:Key="Connection Settings">Připojení</s:String>
     <s:String x:Key="server_editor_group_title_display">Zobrazení</s:String>
     <s:String x:Key="server_editor_group_title_advantage">Výhoda</s:String>
     <s:String x:Key="server_editor_group_title_gateway">Server brány vzdálených ploch</s:String>
@@ -137,6 +139,7 @@
     <s:String x:Key="Use private key">Použít soukromý klíč</s:String>
     <s:String x:Key="Private key">Soukromý klíč</s:String>
     <s:String x:Key="Open SFTP when connected">Při připojení otevřít SFTP</s:String>
+    <s:String x:Key="Open SFTP">Otevřete SFTP</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag">Vzdálená plocha na celou obrazovku</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_window">Vypnout</s:String>
     <s:String x:Key="server_editor_display_full_screen_flag_full_screen">Zapnout (jeden monitor)</s:String>
@@ -162,7 +165,7 @@
     <s:String x:Key="server_editor_advantage_clipboard">Schránka</s:String>
     <s:String x:Key="server_editor_advantage_key_combinations">Kombinace kláves</s:String>
     <s:String x:Key="server_editor_advantage_disk_drives">Diskové jednotky</s:String>
-    <s:String x:Key="Drives plug in latter">Drives plug in latter</s:String>
+    <s:String x:Key="Drives plug in later">Drives plug in later</s:String>
     <s:String x:Key="server_editor_advantage_sounds">Zvuky</s:String>
     <s:String x:Key="server_editor_advantage_sounds_disabled">Vypnuto</s:String>
     <s:String x:Key="server_editor_advantage_sounds_on_local">Přehrávat lokálně</s:String>
@@ -308,4 +311,15 @@
     <s:String x:Key="Do you want to replace the current parameter list with preset value?">Chcete nahradit aktuální seznam parametrů přednastavenou hodnotou?</s:String>
     <s:String x:Key="One option per line">Jedna možnost na řádek</s:String>
     <s:String x:Key="Use vertical lines to separate descriptions">K oddělení popisů použijte svislé čáry (hodnota|popis)</s:String>
+    <s:String x:Key="Automatically focus on the content when selecting a tab">Při výběru karty se automaticky zaměří na obsah</s:String>
+    <s:String x:Key="Copy the port along with the address when copying">Při kopírování zkopírujte port spolu s adresou</s:String>
+    <s:String x:Key="Place the close button on the left side to prevent accidental touches">Umístěte zavírací tlačítko na levou stranu, abyste zabránili náhodným dotykům</s:String>
+    <s:String x:Key="Ask for password when open connect">Při otevření připojení požádat o heslo</s:String>
+    <s:String x:Key="Remember the information above">Pamatujte na výše uvedené informace</s:String>
+    <s:String x:Key="Quick Connect">Rychlé připojení</s:String>
+    <s:String x:Key="Allow Quick Connect to save entered address information">Povolte rychlému připojení uložit zadané informace o adrese</s:String>
+    <s:String x:Key="Yes">Yes</s:String>
+    <s:String x:Key="No">No</s:String>
+    <s:String x:Key="Click on the icon above to change it to your own image">Kliknutím na ikonu výše ji změníte na svůj vlastní obrázek</s:String>
+    <s:String x:Key="Always open in new window">Vždy otevřít v novém okně</s:String>
 </ResourceDictionary>

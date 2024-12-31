@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using _1RM.Service;
@@ -23,8 +24,15 @@ namespace _1RM.Model.Protocol.Base
             get => _address;
             set
             {
+                var old = _address;
                 if (SetAndNotifyIfChanged(ref _address, value))
+                {
+                    if (string.IsNullOrEmpty(DisplayName) || DisplayName == old)
+                    {
+                        DisplayName = value;
+                    }
                     RaisePropertyChanged(nameof(SubTitle));
+                }
             }
         }
 
@@ -123,6 +131,14 @@ namespace _1RM.Model.Protocol.Base
             return true;
         }
 
+        /// <summary>
+        /// build the id for host
+        /// </summary>
+        /// <returns></returns>
+        public override string BuildConnectionId()
+        {
+            return $"{Id}_{Address}:{Port}";
+        }
 
         #region IDataErrorInfo
         [JsonIgnore]

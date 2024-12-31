@@ -48,7 +48,7 @@ namespace _1RM.View.Settings
         private INotifyPropertyChanged? _selectedViewModel;
         public INotifyPropertyChanged SelectedViewModel
         {
-            get => _selectedViewModel ??= IoC.Get<GeneralSettingViewModel>();
+            get => _selectedViewModel ??= GeneralSettingViewModel;
             set => SetAndNotifyIfChanged(ref _selectedViewModel, value);
         }
 
@@ -63,7 +63,7 @@ namespace _1RM.View.Settings
             switch (page)
             {
                 case EnumMainWindowPage.SettingsGeneral:
-                    SelectedViewModel = IoC.Get<GeneralSettingViewModel>();
+                    SelectedViewModel = GeneralSettingViewModel;
                     break;
                 case EnumMainWindowPage.SettingsData:
                     SelectedViewModel = IoC.Get<DataSourceViewModel>();
@@ -96,6 +96,21 @@ namespace _1RM.View.Settings
             private set => SetAndNotifyIfChanged(ref _progressBarVisibility, value);
         }
 
+        public GeneralSettingViewModel GeneralSettingViewModel => IoC.Get<GeneralSettingViewModel>();
+        public LauncherSettingViewModel LauncherSettingViewModel => IoC.Get<LauncherSettingViewModel>();
+
+
+        public bool TabHeaderShowIconButton
+		{
+            get => _configurationService.General.TabHeaderShowIconButton;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _configurationService.General.TabHeaderShowIconButton, value))
+                {
+                    _configurationService.Save();
+                }
+            }
+        }
 
         public bool TabHeaderShowCloseButton
         {
@@ -136,6 +151,18 @@ namespace _1RM.View.Settings
                         MessageBoxHelper.ErrorAlert(res.GetErrorMessage);
                         return;
                     }
+
+                    // do not check additional sources here, because team database may not be connected when one leaves working place.
+                    //foreach (var additionalSource in _dataSourceService.AdditionalSources)
+                    //{
+                    //    var status = additionalSource.Value.Database_SelfCheck();
+                    //    if (status.Status != EnumDatabaseStatus.OK)
+                    //    {
+                    //        ShowPage(EnumMainWindowPage.SettingsData);
+                    //        MessageBoxHelper.ErrorAlert(status.GetErrorMessage);
+                    //        return;
+                    //    }
+                    //}
 
                     if (_configurationService.Launcher.LauncherEnabled != IoC.TryGet<LauncherWindowViewModel>()?.SetHotKey(_configurationService.Launcher.LauncherEnabled, _configurationService.Launcher.HotKeyModifiers, _configurationService.Launcher.HotKeyKey))
                     {

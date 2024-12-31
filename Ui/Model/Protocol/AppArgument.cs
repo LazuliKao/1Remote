@@ -9,7 +9,6 @@ using _1RM.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.FileSystem;
 
@@ -90,7 +89,7 @@ public class AppArgument : NotifyPropertyChangedBase, ICloneable, IDataErrorInfo
 
 
 
-    private bool _addBlankAfterKey = true;
+    private bool _addBlankAfterKey = false;
     /// <summary>
     /// argument like "sftp://%1RM_USERNAME%:%1RM_PASSWORD%@%1RM_HOSTNAME%:%1RM_PORT%" need it to be false
     /// </summary>
@@ -197,9 +196,10 @@ public class AppArgument : NotifyPropertyChangedBase, ICloneable, IDataErrorInfo
 
     public string GetArgumentString(bool forDemo = false, LocalApp? app = null)
     {
+        var key = $"{Key}{(AddBlankAfterKey ? " " : "")}";
         if (Type == AppArgumentType.Flag)
         {
-            return Value == "1" ? Key : "";
+            return Value == "1" ? key : "";
         }
 
         // REPLACE %xxx% with SystemEnvironment, 替换系统环境变量
@@ -226,12 +226,16 @@ public class AppArgument : NotifyPropertyChangedBase, ICloneable, IDataErrorInfo
             value = forDemo ? "******" : UnSafeStringEncipher.DecryptOrReturnOriginalString(Value);
         }
 
-        if (value.IndexOf(" ", StringComparison.Ordinal) > 0)
-            value = $"\"{value}\"";
+        //if (value.IndexOf(" ", StringComparison.Ordinal) > 0)
+        //{
+        //    value = $"\"{value}\"";
+        //}
+
+        value = $"{value}{(AddBlankAfterValue ? " " : "")}";
 
         if (!string.IsNullOrEmpty(Key))
         {
-            value = $"{Key}{(AddBlankAfterKey ? " " : "")}{value}{(AddBlankAfterValue ? " " : "")}";
+            value = $"{key}{value}";
         }
         return value;
     }
@@ -337,7 +341,7 @@ public class AppArgument : NotifyPropertyChangedBase, ICloneable, IDataErrorInfo
         }
         if (string.IsNullOrEmpty(value) && type != AppArgumentType.Selection)
         {
-            if (!isNullable || type == AppArgumentType.Const)
+            if (!isNullable && type != AppArgumentType.Const)
                 return new Tuple<bool, string>(false, IoC.Translate(LanguageService.CAN_NOT_BE_EMPTY));
             else
                 return new Tuple<bool, string>(true, "");

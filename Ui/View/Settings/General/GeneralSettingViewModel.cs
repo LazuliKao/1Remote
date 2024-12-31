@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using _1RM.Service;
 using _1RM.Utils;
-using Google.Protobuf.WellKnownTypes;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.FileSystem;
-using SetSelfStartingHelper = _1RM.Utils.SetSelfStartingHelper;
 
 namespace _1RM.View.Settings.General
 {
@@ -80,6 +76,57 @@ namespace _1RM.View.Settings.General
 
         public string LogPath => SimpleLogHelper.GetFileFullName();
 
+        public SimpleLogHelper.EnumLogLevel LogLevel
+        {
+            get => SimpleLogHelper.WriteLogLevel;
+            set
+            {
+                if (SimpleLogHelper.WriteLogLevel != value)
+                {
+                    SimpleLogHelper.WriteLogLevel = value;
+                    SimpleLogHelper.PrintLogLevel = value;
+                    _configurationService.General.LogLevel = (int)value;
+                    RaisePropertyChanged();
+                    _configurationService.Save();
+                }
+            }
+        }
+
+        //public bool TabAutoFocusContent
+        //{
+        //    get => _configurationService.General.TabAutoFocusContent;
+        //    set
+        //    {
+        //        if (SetAndNotifyIfChanged(ref _configurationService.General.TabAutoFocusContent, value))
+        //        {
+        //            _configurationService.Save();
+        //        }
+        //    }
+        //}
+
+        public bool CopyPortWhenCopyAddress
+        {
+            get => _configurationService.General.CopyPortWhenCopyAddress;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _configurationService.General.CopyPortWhenCopyAddress, value))
+                {
+                    _configurationService.Save();
+                }
+            }
+        }
+
+        public bool TabWindowCloseButtonOnLeft
+        {
+            get => _configurationService.General.TabWindowCloseButtonOnLeft;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _configurationService.General.TabWindowCloseButtonOnLeft, value))
+                {
+                    _configurationService.Save();
+                }
+            }
+        }
 
         private RelayCommand? _cmdExploreTo = null;
         public RelayCommand CmdExploreTo
