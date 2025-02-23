@@ -41,10 +41,12 @@ namespace _1RM.View.Host.ProtocolHosts
                 SimpleLogHelper.Warning($"RDP Host: Call ReConn");
             }
             Status = ProtocolHostStatus.WaitingForReconnect;
-
-            RdpHost.Visibility = System.Windows.Visibility.Collapsed;
-            GridLoading.Visibility = System.Windows.Visibility.Visible;
-            GridMessageBox.Visibility = System.Windows.Visibility.Collapsed;
+            Execute.OnUIThreadSync(() =>
+            {
+                RdpHost.Visibility = System.Windows.Visibility.Collapsed;
+                GridLoading.Visibility = System.Windows.Visibility.Visible;
+                GridMessageBox.Visibility = System.Windows.Visibility.Collapsed;
+            });
             RdpClientDispose();
 
             Status = ProtocolHostStatus.NotInit;
@@ -254,7 +256,7 @@ namespace _1RM.View.Host.ProtocolHosts
                         SetRdpResolution((uint)(_rdpSettings.RdpWidth ?? 800), (uint)(_rdpSettings.RdpHeight ?? 600), true);
                         break;
                     default:
-                        MsAppCenterHelper.Error(new ArgumentOutOfRangeException($"{_rdpSettings.RdpWindowResizeMode} is not processed!"));
+                        SentryIoHelper.Error(new ArgumentOutOfRangeException($"{_rdpSettings.RdpWindowResizeMode} is not processed!"));
                         SetRdpResolution((uint)screenSize.Width, (uint)screenSize.Height, true);
                         break;
                 }

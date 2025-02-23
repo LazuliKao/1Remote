@@ -41,6 +41,12 @@ namespace _1RM.Service
         #region General
         public string CurrentLanguageCode = "en-us";
         public bool ListPageIsCardView = false;
+        public enum EnumCloseButtonBehavior
+        {
+            Exit,
+            Minimize,
+        };
+        public int CloseButtonBehavior = (int)EnumCloseButtonBehavior.Minimize;
         public bool ConfirmBeforeClosingSession = false;
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -76,6 +82,11 @@ namespace _1RM.Service
         [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool TabWindowCloseButtonOnLeft = false;
+
+
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow = false;
     }
 
     public class LauncherConfig
@@ -217,7 +228,6 @@ namespace _1RM.Service
             set => _cfg.DatabaseReconnectPeriod = value >= 0 ? (value > 60 * 60 ? 60 * 60 : value) : 0;
         }
 
-
         public ThemeConfig Theme => _cfg.Theme;
         public EngagementSettings Engagement => _cfg.Engagement;
         /// <summary>
@@ -314,7 +324,7 @@ namespace _1RM.Service
                     RetryHelper.Try(() =>
                     {
                         File.WriteAllText(AppPathHelper.Instance.ProfileJsonPath, JsonConvert.SerializeObject(this._cfg, Formatting.Indented), Encoding.UTF8);
-                    }, actionOnError: exception => MsAppCenterHelper.Error(exception));
+                    }, actionOnError: exception => SentryIoHelper.Error(exception));
                 }
 
                 DataSourceService.AdditionalSourcesSaveToProfile(AppPathHelper.Instance.ProfileAdditionalDataSourceJsonPath, AdditionalDataSource);

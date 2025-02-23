@@ -88,6 +88,20 @@ namespace _1RM.View.Host.ProtocolHosts
         {
             InitializeComponent();
 
+
+            MenuItems.Add(new System.Windows.Controls.Separator());
+            MenuItems.Add(new System.Windows.Controls.MenuItem()
+            {
+                Header = "Ctrl + Alt + Del",
+                Command = new RelayCommand((o) =>
+                {
+                    _rdpClient?.Focus();
+                    new MsRdpClientNonScriptableWrapper(_rdpClient.GetOcx()).SendKeys(
+                        new int[] { 0x1d, 0x38, 0x53, 0x53, 0x38, 0x1d },
+                        new bool[] { false, false, false, true, true, true, });
+                }, o => HasConnected)
+            });
+
             GridMessageBox.Visibility = Visibility.Collapsed;
             GridLoading.Visibility = Visibility.Visible;
 
@@ -564,17 +578,18 @@ namespace _1RM.View.Host.ProtocolHosts
 
             // if win11 disable BandwidthDetection, make a workaround for #437 to hide info button after OS Win11 22H2 to avoid app crash when click the info button on Win11
             // detail: https://github.com/1Remote/1Remote/issues/437
-            try
-            {
-                if (_1RM.Utils.WindowsApi.WindowsVersionHelper.IsWindows1122H2OrHigher()) // Win11 22H2
-                {
-                    _rdpClient.AdvancedSettings9.BandwidthDetection = false;
-                }
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            // 20250126: removed due to https://github.com/1Remote/1Remote/issues/559 is fixed
+            //try
+            //{
+            //    if (_1RM.Utils.WindowsApi.WindowsVersionHelper.IsWindows1122H2OrHigher()) // Win11 22H2
+            //    {
+            //        _rdpClient.AdvancedSettings9.BandwidthDetection = false;
+            //    }
+            //}
+            //catch (Exception)
+            //{
+            //    // ignored
+            //}
 
             // ref: https://docs.microsoft.com/en-us/windows/win32/termserv/imsrdpclientadvancedsettings-performanceflags
             int nDisplayPerformanceFlag = 0;
@@ -1020,6 +1035,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 // Kill logical focus
                 FocusManager.SetFocusedElement(FocusManager.GetFocusScope(RdpHost), null);
                 Keyboard.ClearFocus();
+                this.Focus();
                 RdpHost.Focus();
                 if (_rdpClient is { } rdp)
                 {

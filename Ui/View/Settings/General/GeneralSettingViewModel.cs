@@ -49,6 +49,18 @@ namespace _1RM.View.Settings.General
             }
         }
 
+        public int CloseButtonBehavior
+        {
+            get => _configurationService.General.CloseButtonBehavior;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _configurationService.General.CloseButtonBehavior, value))
+                {
+                    _configurationService.Save();
+                }
+            }
+        }
+
         public bool ConfirmBeforeClosingSession
         {
             get => _configurationService.General.ConfirmBeforeClosingSession;
@@ -128,6 +140,18 @@ namespace _1RM.View.Settings.General
             }
         }
 
+        public bool TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow
+        {
+            get => _configurationService.General.TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _configurationService.General.TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow, value))
+                {
+                    _configurationService.Save();
+                }
+            }
+        }
+
         private RelayCommand? _cmdExploreTo = null;
         public RelayCommand CmdExploreTo
         {
@@ -141,7 +165,7 @@ namespace _1RM.View.Settings.General
                     }
                     catch (Exception e)
                     {
-                        MsAppCenterHelper.Error(e);
+                        SentryIoHelper.Error(e);
                     }
                 });
             }

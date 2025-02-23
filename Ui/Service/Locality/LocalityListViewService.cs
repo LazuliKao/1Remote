@@ -20,6 +20,8 @@ namespace _1RM.Service.Locality
         public Dictionary<string, int> ServerCustomOrder = new Dictionary<string, int>();
         public Dictionary<string, int> GroupedOrder = new Dictionary<string, int>();
         public Dictionary<string, bool> GroupedIsExpanded = new Dictionary<string, bool>();
+        public double ServerListNameWidth = 300;
+        public double ServerListNoteWidth = 100;
     }
 
 
@@ -58,7 +60,7 @@ namespace _1RM.Service.Locality
                 CanSave = false;
                 AppPathHelper.CreateDirIfNotExist(AppPathHelper.Instance.LocalityDirPath, false);
                 RetryHelper.Try(() => { File.WriteAllText(JsonPath, JsonConvert.SerializeObject(_settings, Formatting.Indented), Encoding.UTF8); },
-                    actionOnError: exception => MsAppCenterHelper.Error(exception));
+                    actionOnError: exception => SentryIoHelper.Error(exception));
                 CanSave = true;
             }
         }
@@ -154,9 +156,36 @@ namespace _1RM.Service.Locality
             }
             catch (Exception e)
             {
-                MsAppCenterHelper.Error(e);
+                SentryIoHelper.Error(e);
                 _settings.GroupedIsExpanded = new Dictionary<string, bool>();
             }
+            Save();
+        }
+
+        public static double ServerListNameWidthGet()
+        {
+            Load();
+            return _settings.ServerListNameWidth;
+        }
+
+        public static void ServerListNameWidthSet(double value)
+        {
+            Load();
+            if (_settings.ServerListNameWidth == value) return;
+            _settings.ServerListNameWidth = value;
+            Save();
+        }
+        public static double ServerListNoteWidthGet()
+        {
+            Load();
+            return _settings.ServerListNoteWidth;
+        }
+
+        public static void ServerListNoteWidthSet(double value)
+        {
+            Load();
+            if (_settings.ServerListNoteWidth == value) return;
+            _settings.ServerListNoteWidth = value;
             Save();
         }
     }

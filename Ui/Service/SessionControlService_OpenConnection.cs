@@ -36,7 +36,7 @@ namespace _1RM.Service
             if (RetryHelper.Try(() =>
                 {
                     File.WriteAllText(rdpFile, text);
-                }, actionOnError: exception => MsAppCenterHelper.Error(exception)))
+                }, actionOnError: exception => SentryIoHelper.Error(exception)))
             {
                 // delete tmp rdp file, ETA 30s
                 Task.Factory.StartNew(() =>
@@ -71,7 +71,7 @@ namespace _1RM.Service
                 }
                 catch (Exception e)
                 {
-                    MsAppCenterHelper.Error(e);
+                    SentryIoHelper.Error(e);
                     MessageBoxHelper.ErrorAlert(e.Message + "\r\n while Run mstsc.exe");
                 }
             }
@@ -91,7 +91,7 @@ namespace _1RM.Service
             if (RetryHelper.Try(() =>
             {
                 File.WriteAllText(rdpFile, text);
-            }, actionOnError: exception => MsAppCenterHelper.Error(exception)))
+            }, actionOnError: exception => SentryIoHelper.Error(exception)))
             {
                 var p = new Process
                 {
@@ -184,10 +184,6 @@ namespace _1RM.Service
 
             #region prepare
 
-            // trace source view
-            if (string.IsNullOrEmpty(fromView) == false)
-                MsAppCenterHelper.TraceSessionOpen(protocol.Protocol, fromView);
-
             // connect count save to config
             _configurationService.Engagement.ConnectCount++;
             _configurationService.Save();
@@ -216,22 +212,23 @@ namespace _1RM.Service
                     }
 
                     p.SetCredential(c);
-                    if (string.IsNullOrEmpty(assignCredentialName) == false)
-                        p.DisplayName += $" ({c.Name})";
+                    p.DisplayName = c.Name;
                 }
             }
 
 
 
-            // check if need to input password
+            // check if it needs password
             if (protocolClone is ProtocolBaseWithAddressPortUserPwd { AskPasswordWhenConnect: true } pb)
             {
                 bool flag = false;
                 Execute.OnUIThreadSync(() =>
                 {
-                    var pwdDlg = new PasswordPopupDialogViewModel(protocolClone is SSH or SFTP);
-                    pwdDlg.Title = $"[{pb.ProtocolDisplayName}]({pb.DisplayName}) -> {pb.Address}:{pb.Port}";
-                    pwdDlg.UserName = pb.UserName;
+                    var pwdDlg = new PasswordPopupDialogViewModel(protocolClone is SSH or SFTP)
+                    {
+                        Title = $"[{pb.ProtocolDisplayName}]({pb.DisplayName}) -> {pb.Address}:{pb.Port}",
+                        UserName = pb.UserName
+                    };
                     if (pb.UsePrivateKeyForConnect == true)
                     {
                         pwdDlg.CanUsePrivateKeyForConnect = true;

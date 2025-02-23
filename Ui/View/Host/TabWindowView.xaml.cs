@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
+using _1RM.View.Host.ProtocolHosts;
 
 namespace _1RM.View.Host
 {
@@ -220,6 +221,31 @@ namespace _1RM.View.Host
                     return;
             }
             base.WinTitleBar_OnPreviewMouseDown(sender, e);
+        }
+
+
+
+        private void TabablzControl_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var t = sender.GetType();
+            SimpleLogHelper.DebugWarning(t);
+            // focus to be on the integrated exe after clicking on the WPF window.
+            RunForIntegrate();
+        }
+
+        public override void WinTitleBar_OnPreviewMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var isDragging = _isDragging;
+            base.WinTitleBar_OnPreviewMouseMove(sender, e);
+            if (Vm?.SelectedItem?.Content?.GetProtocolHostType() != ProtocolHostType.Integrate)
+            {
+                // When stop dragging, focus on the integrated exe
+                if (isDragging && !_isDragging)
+                {
+                    // focus to be on the integrated exe after drag on the WPF window.
+                    RunForIntegrate();
+                }
+            }
         }
     }
 }

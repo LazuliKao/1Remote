@@ -196,37 +196,52 @@ namespace _1RM.View.Host.ProtocolHosts
         /// <param name="showIoMessage"></param>
         private void ShowFolder(string path, int mode = 0, bool showIoMessage = true)
         {
-            var t = new Task(() =>
+            var t = new Task(async () =>
             {
-                lock (this)
+                GridLoadingVisibility = Visibility.Visible;
+                try
                 {
-                    GridLoadingVisibility = Visibility.Visible;
+                    //SimpleLogHelper.Debug($"ShowFolder({path}, {mode}) START");
+                    if (string.IsNullOrWhiteSpace(path))
+                        path = "/";
+                    if (path.EndsWith("/.."))
+                    {
+                        //SimpleLogHelper.Debug($"ShowFolder after path.EndsWith(/..)");
+                        path = path.Substring(0, path.Length - 3);
+                        var i = path.LastIndexOf("/", StringComparison.Ordinal);
+                        if (i > 0)
+                        {
+                            path = path.Substring(0, i);
+                        }
+                    }
+
+                    ObservableCollection<RemoteItem>? remoteItemInfos = null;
                     try
                     {
-                        //SimpleLogHelper.Debug($"ShowFolder({path}, {mode}) START");
-                        if (string.IsNullOrWhiteSpace(path))
-                            path = "/";
-                        if (path.EndsWith("/.."))
+                        if (await Trans.Exists(path))
                         {
-                            //SimpleLogHelper.Debug($"ShowFolder after path.EndsWith(/..)");
-                            path = path.Substring(0, path.Length - 3);
-                            var i = path.LastIndexOf("/", StringComparison.Ordinal);
-                            if (i > 0)
-                            {
-                                path = path.Substring(0, i);
-                            }
-                        }
-
-                        try
-                        {
-                            var remoteItemInfos = new ObservableCollection<RemoteItem>();
                             //SimpleLogHelper.Debug($"ShowFolder before ListDirectoryItems");
-                            var items = Trans.ListDirectoryItems(path);
-                            if (Enumerable.Any<RemoteItem>(items))
+                            var items = await Trans.ListDirectoryItems(path);
+                            if (items.Any())
                             {
                                 remoteItemInfos = new ObservableCollection<RemoteItem>(items);
                             }
-
+                        }
+                        else
+                        {
+                            IoMessageLevel = IoMessageLevelError;
+                            IoMessage = $"ls {path}: Not exists";
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        IoMessageLevel = IoMessageLevelError;
+                        IoMessage = $"ls {CurrentPath}: " + e.Message;
+                    }
+                    finally
+                    {
+                        if (remoteItemInfos != null)
+                        {
                             RemoteItems = remoteItemInfos;
                             //SimpleLogHelper.Debug($"ShowFolder before MakeRemoteItemsOrderBy");
                             MakeRemoteItemsOrderBy();
@@ -259,23 +274,38 @@ namespace _1RM.View.Host.ProtocolHosts
                                 IoMessage = $"ls {CurrentPath}";
                             }
                         }
-                        catch (Exception e)
-                        {
-                            IoMessageLevel = IoMessageLevelError;
-                            IoMessage = $"ls {CurrentPath}: " + e.Message;
-                            if (CurrentPath != path)
-                                ShowFolder(CurrentPath, showIoMessage: false);
-                            return;
-                        }
                     }
-                    finally
-                    {
-                        GridLoadingVisibility = Visibility.Collapsed;
-                    }
-                    //SimpleLogHelper.Debug($"ShowFolder({path}, {mode}) END");
                 }
+                finally
+                {
+                    GridLoadingVisibility = Visibility.Collapsed;
+                }
+                //SimpleLogHelper.Debug($"ShowFolder({path}, {mode}) END");
             });
             t.Start();
+        }
+
+        private async void DeleteSelectedItems()
+        {
+            foreach (var itemInfo in RemoteItems)
+            {
+                if (itemInfo.IsSelected)
+                {
+                    var selected = itemInfo.FullName;
+                    try
+                    {
+                        await Trans.Delete(selected);
+                        IoMessageLevel = IoMessageLevelNormal;
+                        IoMessage = $"Delete {selected}";
+                    }
+                    catch (Exception e)
+                    {
+                        IoMessageLevel = IoMessageLevelError;
+                        IoMessage = $"Delete {selected}: " + e.Message;
+                    }
+                }
+            }
+            ShowFolder(CurrentPath, showIoMessage: false);
         }
 
         public void FileList_OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -396,28 +426,9 @@ namespace _1RM.View.Host.ProtocolHosts
                         var vm = IoC.Get<SessionControlService>().GetTabByConnectionId(ConnectionId)?.GetViewModel();
                         if (true == MessageBoxHelper.Confirm(IoC.Translate("confirm_to_delete"), ownerViewModel: vm == null ? this : vm))
                         {
-                            foreach (var itemInfo in RemoteItems)
-                            {
-                                if (itemInfo.IsSelected)
-                                {
-                                    var selected = itemInfo.FullName;
-                                    try
-                                    {
-                                        Trans.Delete(selected);
-                                        IoMessageLevel = IoMessageLevelNormal;
-                                        IoMessage = $"Delete {selected}";
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        IoMessageLevel = IoMessageLevelError;
-                                        IoMessage = $"Delete {selected}: " + e.Message;
-                                    }
-                                }
-                            }
+                            DeleteSelectedItems();
                         }
                     }
-
-                    ShowFolder(CurrentPath, showIoMessage: false);
                 });
             }
         }
@@ -449,7 +460,7 @@ namespace _1RM.View.Host.ProtocolHosts
         {
             get
             {
-                return _cmdEndRenaming ??= new RelayCommand((o) =>
+                return _cmdEndRenaming ??= new RelayCommand(async (o) =>
                 {
                     if (Trans?.IsConnected() != true)
                         return;
@@ -458,14 +469,14 @@ namespace _1RM.View.Host.ProtocolHosts
                         foreach (var item in RemoteItems.Where(x => x.IsRenaming == true))
                         {
                             var newPath = CurrentPath + "/" + item.Name;
-                            if (string.IsNullOrEmpty(item.FullName) || !Trans.Exists(item.FullName))
+                            if (string.IsNullOrEmpty(item.FullName) || (Trans != null && await Trans.Exists(item.FullName) == false))
                             {
                                 // add
                                 if (item.IsDirectory)
                                 {
                                     try
                                     {
-                                        Trans.CreateDirectory(newPath);
+                                        await Trans.CreateDirectory(newPath);
                                         IoMessageLevel = IoMessageLevelNormal;
                                         IoMessage = $"Create folder {newPath}";
                                     }
@@ -481,7 +492,7 @@ namespace _1RM.View.Host.ProtocolHosts
                                 // edit
                                 try
                                 {
-                                    Trans.RenameFile(item.FullName, newPath);
+                                    await Trans.RenameFile(item.FullName, newPath);
                                     IoMessageLevel = IoMessageLevelNormal;
                                     IoMessage = $"Move {item.FullName} => {newPath}";
                                 }

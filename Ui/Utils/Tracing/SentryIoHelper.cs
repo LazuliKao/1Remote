@@ -50,11 +50,13 @@ namespace _1RM.Utils
         {
             if (_hasInit == false) { return; }
             properties ??= new Dictionary<string, string>();
-
-            if (!properties.ContainsKey("Version"))
-                properties.Add("Version", AppVersion.Version);
-            if (!properties.ContainsKey("BuildDate"))
-                properties.Add("BuildDate", AppVersion.BuildDate);
+            properties.TryAdd("Version", AppVersion.Version);
+            properties.TryAdd("BuildDate", AppVersion.BuildDate);
+#if FOR_MICROSOFT_STORE_ONLY
+            properties.TryAdd("Distributor", $"{Assert.APP_NAME} MS Store");
+#else
+            properties.TryAdd("Distributor", $"{Assert.APP_NAME} Exe");
+#endif
 
             if (properties.ContainsKey("StackTrace") == false)
                 try
@@ -97,7 +99,7 @@ namespace _1RM.Utils
 #if DEBUG
             string en = $"{eventName}_Debug";
 #else
-            string en = eventName.ToString();
+                        string en = eventName.ToString();
 #endif
             SentrySdk.CaptureMessage(en, scope =>
             {
@@ -109,63 +111,22 @@ namespace _1RM.Utils
             }, SentryLevel.Info);
         }
 
-        public static void TraceAppStatus(bool isStart, bool? isStoreVersion = null)
-        {
-            var properties = new Dictionary<string, string>
-            {
-                { "Action", isStart ? "Start" : "Exit" },
-            };
-            if (isStart && isStoreVersion != null)
-            {
-                properties.Add("Version", isStoreVersion == true ? "MS Store" : "Exe");
-            }
-            Trace(EventName.App, properties);
-        }
-
-        public static void TraceView(string viewName, bool isShow)
-        {
-            var properties = new Dictionary<string, string>
-            {
-                { "View", (isShow ? "Show" : "Hide") + viewName },
-            };
-            Trace(EventName.View, properties);
-        }
-
-        public static void TraceSessionOpen(string protocol, string via)
-        {
-            if (string.IsNullOrEmpty(via)) { return; }
-            var properties = new Dictionary<string, string>
-            {
-                { "Action", "Start" },
-                { "Protocol", protocol },
-                { "Via", via },
-            };
-            Trace(EventName.SessionConnect, properties);
-        }
-
-        public static void TraceSessionEdit(string protocol)
-        {
-            if (_hasInit == false) { return; }
-            var properties = new Dictionary<string, string>
-            {
-                { "Protocol", protocol },
-            };
-            Trace(EventName.SessionEdit, properties);
-        }
+        //public static void TraceSessionOpen(string protocol, string via)
+        //{
+        //    if (string.IsNullOrEmpty(via)) { return; }
+        //    var properties = new Dictionary<string, string>
+        //    {
+        //        { "Action", "Start" },
+        //        { "Protocol", protocol },
+        //        { "Via", via },
+        //    };
+        //    Trace(EventName.SessionConnect, properties);
+        //}
 
         public static void TraceSpecial(Dictionary<string, string> kys)
         {
             if (_hasInit == false) { return; }
             Trace(EventName.Special, kys);
-        }
-
-        public static void TraceSpecial(string key, string value)
-        {
-            var properties = new Dictionary<string, string>
-            {
-                { key, value },
-            };
-            TraceSpecial(properties);
         }
     }
 }

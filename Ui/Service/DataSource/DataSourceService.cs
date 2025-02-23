@@ -119,7 +119,7 @@ namespace _1RM.Service.DataSource
 
                 config.Database_CloseConnection();
                 var ret = DatabaseStatus.New(EnumDatabaseStatus.NotConnectedYet);
-                if(connectTimeOutSeconds > 0)
+                if (connectTimeOutSeconds > 0)
                     ret = config.Database_SelfCheck(connectTimeOutSeconds);
                 AdditionalSources.AddOrUpdate(config.DataSourceName, config, (name, source) => config);
                 return ret;
@@ -127,8 +127,8 @@ namespace _1RM.Service.DataSource
             catch (Exception e)
             {
                 SimpleLogHelper.Warning(e);
-                MsAppCenterHelper.Error(e);
-                var ret = DatabaseStatus.New(EnumDatabaseStatus.AccessDenied, e.Message);
+                SentryIoHelper.Error(e);
+                var ret = DatabaseStatus.New(EnumDatabaseStatus.OtherError, e.Message);
                 return ret;
             }
             finally
@@ -184,7 +184,7 @@ namespace _1RM.Service.DataSource
                         RetryHelper.Try(() =>
                         {
                             File.WriteAllText(path, JsonConvert.SerializeObject(sources, Formatting.Indented), Encoding.UTF8);
-                        }, actionOnError: exception => MsAppCenterHelper.Error(exception));
+                        }, actionOnError: exception => SentryIoHelper.Error(exception));
                 }
             }
             finally
