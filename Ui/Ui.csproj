@@ -2,7 +2,6 @@
 
 	<PropertyGroup>
 		<OutputType Condition="'$(Configuration)'=='Debug'">Exe</OutputType>
-		<OutputType Condition="'$(Configuration)'=='StoreDebug'">Exe</OutputType>
 		<OutputType Condition="'$(Configuration)'!='Debug'">WinExe</OutputType>
 		<DisableWinExeOutputInference>true</DisableWinExeOutputInference>
 		<Nullable>enable</Nullable>
@@ -10,21 +9,19 @@
 		<UseWindowsForms>True</UseWindowsForms>
 		<RootNamespace>_1RM</RootNamespace>
 		<AssemblyName>1Remote</AssemblyName>
-		<Configurations>Debug;Release;StoreRelease;ReleaseNet48;StoreDebug</Configurations>
-        <ApplicationManifest>app.manifest</ApplicationManifest>
+		<Configurations>Debug;Release</Configurations>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
 
 		<ApplicationIcon Condition="'$(Configuration)'=='Debug'">LOGO_D.ico</ApplicationIcon>
-		<ApplicationIcon Condition="'$(Configuration)'=='StoreDebug'">LOGO_D.ico</ApplicationIcon>
 		<ApplicationIcon Condition="'$(Configuration)'!='Debug'">LOGO.ico</ApplicationIcon>
 
-		<TargetFramework Condition="'$(Configuration)'=='Debug'">net6.0-windows</TargetFramework>
-		<TargetFramework Condition="'$(Configuration)'=='Release'">net6.0-windows</TargetFramework>
-		<TargetFramework Condition="'$(Configuration)'=='ReleaseNet48'">net48</TargetFramework>
-		<TargetFramework Condition="'$(Configuration)'=='StoreDebug'">net48</TargetFramework>
-		<TargetFramework Condition="'$(Configuration)'=='StoreRelease'">net48</TargetFramework>
+		<TargetFramework Condition="'$(Configuration)'=='Debug'">net8.0-windows</TargetFramework>
+		<TargetFramework Condition="'$(Configuration)'=='Release'">net8.0-windows</TargetFramework>
 
-		<!--<TargetFramework Condition="'$(Configuration)'=='StoreRelease'">net6.0-windows10.0.17763.0</TargetFramework>-->
-		<!--<TargetPlatformMinVersion Condition="'$(Configuration)'!='ReleaseNet48'">10.0.17763.0</TargetPlatformMinVersion>-->
+		<!--<TargetFramework
+		Condition="'$(Configuration)'=='StoreRelease'">net8.0-windows10.0.17763.0</TargetFramework>-->
+		<!--<TargetPlatformMinVersion
+		Condition="'$(Configuration)'!='ReleaseNet48'">10.0.17763.0</TargetPlatformMinVersion>-->
 
 		<DebugType>embedded</DebugType>
 		<Platforms>AnyCPU;x86</Platforms>
@@ -38,11 +35,12 @@
 		<RunPostBuildEvent>Always</RunPostBuildEvent>
 		<XamlDebuggingInformation>True</XamlDebuggingInformation>
 
-        <CsWinRTAotOptimizerEnabled>false</CsWinRTAotOptimizerEnabled> <!-- 20241030 fix https://github.com/dotnet/sdk/issues/43680 -->
+		<CsWinRTAotOptimizerEnabled>false</CsWinRTAotOptimizerEnabled> <!-- 20241030 fix
+		https://github.com/dotnet/sdk/issues/43680 -->
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'!='net48'">
-		<TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
+		<TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
 		<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 		<!--<PublishTrimmed>true</PublishTrimmed>
 		<TrimMode>partial</TrimMode>
@@ -55,10 +53,12 @@
 		<PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.17763.0" />
 		二选一
 		<Reference Include="System.Runtime.WindowsRuntime">
-			<HintPath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETCore\v4.5\System.Runtime.WindowsRuntime.dll</HintPath>
+			<HintPath>C:\Program Files (x86)\Reference
+		Assemblies\Microsoft\Framework\.NETCore\v4.5\System.Runtime.WindowsRuntime.dll</HintPath>
 		</Reference>
 		<Reference Include="Windows">
-			<HintPath>C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.17763.0\Windows.winmd</HintPath>
+			<HintPath>C:\Program Files (x86)\Windows
+		Kits\10\UnionMetadata\10.0.17763.0\Windows.winmd</HintPath>
 			<IsWinMDFile>true</IsWinMDFile>
 		</Reference>-->
 	</ItemGroup>
@@ -76,13 +76,14 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<AssemblyVersion>1.0.1.41230</AssemblyVersion>
+		<AssemblyVersion>1.1.1.50223</AssemblyVersion>
 		<FileVersion>$(AssemblyVersion)</FileVersion>
 		<Version>$(AssemblyVersion)</Version>
 		<Authors>Shawn</Authors>
 		<Product>Shawn Veck</Product>
 		<Description>1Remote is a modern personal remote session manager and launcher.</Description>
 		<Copyright>1remote.github.io</Copyright>
+		<TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
 	</PropertyGroup>
 
 	<!--<ItemGroup>
@@ -103,21 +104,6 @@
 		<DefineConstants>TRACE;</DefineConstants>
 		<Optimize>False</Optimize>
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)'=='ReleaseNet48'">
-		<DefineConstants>TRACE;</DefineConstants>
-		<Optimize>True</Optimize>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)'=='StoreDebug'">
-		<DefineConstants>TRACE;FOR_MICROSOFT_STORE_ONLY;</DefineConstants>
-		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)'=='StoreRelease'">
-		<DefineConstants>TRACE;FOR_MICROSOFT_STORE_ONLY;</DefineConstants>
-		<Optimize>True</Optimize>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -436,7 +422,7 @@
 			<SubType>Designer</SubType>
 		</Page>
 		<Page Update="View\Editor\IconPopupDialogView.xaml">
-		  <SubType>Designer</SubType>
+			<SubType>Designer</SubType>
 		</Page>
 		<Page Update="View\Editor\ServerEditorPageView.xaml">
 			<SubType>Designer</SubType>

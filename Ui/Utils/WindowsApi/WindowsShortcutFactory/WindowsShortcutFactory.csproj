@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net452;netstandard2.0;net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net452;netstandard2.0;net8.0-windows</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
@@ -9,7 +9,9 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Greg Divis</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Description>Simple library for creating and modifying Windows shortcut (.lnk) files. This has no dependencies and calls directly into the native IShellLink COM interfaces instead of using the Windows Script Host.</Description>
+    <Description>Simple library for creating and modifying Windows shortcut (.lnk) files. This has
+      no dependencies and calls directly into the native IShellLink COM interfaces instead of using
+      the Windows Script Host.</Description>
     <PackageTags>windows shortcuts</PackageTags>
     <RepositoryUrl>https://github.com/gdivis/WindowsShortcutFactory.git</RepositoryUrl>
     <Version>1.1.0</Version>
