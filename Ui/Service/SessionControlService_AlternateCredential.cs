@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
 using _1RM.Utils;
+using _1RM.View.ServerList;
 using Shawn.Utils;
 using Stylet;
 using _1RM.View.Utils;
+using _1RM.Model;
 
 namespace _1RM.Service
 {
@@ -74,7 +76,7 @@ namespace _1RM.Service
         /// <summary>
         /// Find the first connectable address from the given credentials. if return null then no address is connectable.
         /// </summary>
-        private static async Task<Credential?> FindFirstConnectableAddressAsync(IEnumerable<Credential> pingCredentials, string protocolDisplayName)
+        public static async Task<Credential?> FindFirstConnectableAddressAsync(IEnumerable<Credential> pingCredentials, string protocolDisplayName)
         {
             var credentials = pingCredentials.Select(x => x.CloneMe()).ToList();
             const int maxWaitSeconds = 5;
@@ -209,8 +211,17 @@ namespace _1RM.Service
         /// <summary>
         /// if return null then no address is connectable.
         /// </summary>
-        private static async Task<Credential?> GetCredential(ProtocolBaseWithAddressPort protocol, string assignCredentialName)
+        public static async Task<Credential?> GetCredential(ProtocolBaseWithAddressPort protocol, string assignCredentialName = "")
         {
+            // set the credential from the raw protocol (for reconnection since the credential may be changed when first connection)
+            if (IoC.Get<GlobalData>().VmItemList.FirstOrDefault(x => x.Id == protocol.Id) is { Server: ProtocolBaseWithAddressPort swap })
+            {
+                var swap2 = (ProtocolBaseWithAddressPort)swap.Clone();
+                swap2.DecryptToConnectLevel();
+                protocol.DisplayName = swap2.DisplayName;
+                protocol.SetCredential(swap2.GetCredential());
+            }
+
             var newCredential = protocol.GetCredential();
             newCredential.Name = protocol.DisplayName;
             // use assign credential 应用指定的 credential

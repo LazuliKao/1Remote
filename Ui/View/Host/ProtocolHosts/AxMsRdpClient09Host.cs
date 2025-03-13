@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,6 +13,10 @@ using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.Controls;
 using Stylet;
+using Windows.Security.Credentials;
+using System.Collections.Generic;
+using _1RM.Model.Protocol.Base;
+using _1RM.Service;
 
 namespace _1RM.View.Host.ProtocolHosts
 {
@@ -49,18 +54,39 @@ namespace _1RM.View.Host.ProtocolHosts
             });
             RdpClientDispose();
 
-            Status = ProtocolHostStatus.NotInit;
 
-            int w = 0;
-            int h = 0;
-            if (ParentWindow is TabWindowView tab)
+            var t = Task.Factory.StartNew(async () =>
             {
-                var size = tab.GetTabContentSize(ColorAndBrushHelper.ColorIsTransparent(this._rdpSettings.ColorHex) == true);
-                w = (int)size.Width;
-                h = (int)size.Height;
-            }
-            InitRdp(w, h, true);
-            Conn();
+                // check if it needs to auto switch address
+                var isAutoAlternateAddressSwitching = _rdpSettings.IsAutoAlternateAddressSwitching == true
+                                                      // if none of the alternate credential has host or port，then disabled `AutoAlternateAddressSwitching`
+                                                      && _rdpSettings.AlternateCredentials.Any(x => !string.IsNullOrEmpty(x.Address) || !string.IsNullOrEmpty(x.Port));
+                if (isAutoAlternateAddressSwitching)
+                {
+                    var c = await SessionControlService.GetCredential(_rdpSettings);
+                    if (c != null)
+                    {
+                        _rdpSettings.SetCredential(c);
+                        _rdpSettings.DisplayName = c.Name;
+                    }
+                }
+
+                Status = ProtocolHostStatus.NotInit;
+
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    int w = 0;
+                    int h = 0;
+                    if (ParentWindow is TabWindowView tab)
+                    {
+                        var size = tab.GetTabContentSize(ColorAndBrushHelper.ColorIsTransparent(this._rdpSettings.ColorHex) == true);
+                        w = (int)size.Width;
+                        h = (int)size.Height;
+                    }
+                    InitRdp(w, h, true);
+                    Conn();
+                });
+            });
         }
 
 

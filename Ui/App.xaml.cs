@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Media;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -39,7 +40,7 @@ namespace _1RM
             }
             catch (Exception e)
             {
-                SentryIoHelper.Error(e);
+                MsAppCenterHelper.Error(e);
             }
 #if DEV
             string kind = aea?.Kind.ToString() ?? "null";
@@ -64,6 +65,38 @@ namespace _1RM
         {
             ResourceDictionary = this.Resources;
             base.OnStartup(e);
+
+            // First, make a sound (one second of silence) in the main window
+            // so that the Volume Mixer and others will recognize 1Remote as
+            // an application that produces sound.
+            //
+            // Otherwise, 1Remote is only be detected as a sound application
+            // when an RDP session is started. However, it seemed odd that it
+            // remained in this state even after all RDP sessions were
+            // terminated.
+            //
+            // So while this application is running, from start to finish,
+            // it's better to be visible as a sound application in the Volume
+            // Mixer and others.
+            //
+            // Additionally, there was another issue where the Volume Mixer
+            // would display the RDP session icon and remain in that state
+            // forever. It appears that the Volume Mixer continues to use the
+            // icon that it first retrieved. So, by first playing the sound in
+            // the main window first, we can get Volume Mixer to display the
+            // application icon and keep it there.
+            //System.Media.SoundPlayer player = new System.Media.SoundPlayer("Resources/dummy.wav");
+            //player.Play();
+
+            // Set dummy.wav as a resource to avoid copy the file to the output folder when build.
+            var sri = Application.GetResourceStream(new Uri("pack://application:,,,/Resources/dummy.wav"));
+            if (sri != null)
+            {
+                using var s = sri.Stream;
+                System.Media.SoundPlayer player = new System.Media.SoundPlayer(s);
+                player.Load();
+                player.Play();
+            }
         }
 
         public static bool ExitingFlag = false;

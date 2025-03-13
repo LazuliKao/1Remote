@@ -76,7 +76,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<AssemblyVersion>1.0.1.41230</AssemblyVersion>
+		<AssemblyVersion>1.1.1.50304</AssemblyVersion>
 		<FileVersion>$(AssemblyVersion)</FileVersion>
 		<Version>$(AssemblyVersion)</Version>
 		<Authors>Shawn</Authors>
@@ -122,6 +122,7 @@
 
 	<ItemGroup>
 		<None Remove="LOGO_D.ico" />
+		<None Remove="Resources\dummy.wav" />
 		<None Remove="Resources\Icons\000_OS\000_Win10_1.png" />
 		<None Remove="Resources\Icons\000_OS\000_Win10_2.png" />
 		<None Remove="Resources\Icons\000_OS\000_Win11_0.png" />
@@ -209,6 +210,9 @@
 	<ItemGroup>
 		<Resource Include="LOGO.ico" />
 		<Resource Include="LOGO_D.ico" />
+		<Resource Include="Resources\dummy.wav">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Resource>
 		<Resource Include="Resources\Icons\000_OS\000_Win10_1.png" />
 		<Resource Include="Resources\Icons\000_OS\000_Win11_0.png" />
 		<Resource Include="Resources\Icons\000_OS\000_Win11_1.png" />

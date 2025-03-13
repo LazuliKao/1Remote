@@ -202,7 +202,7 @@ namespace _1RM.View.ServerList
             get => LocalityListViewService.ServerListNameWidthGet();
             set
             {
-                if (value != LocalityListViewService.ServerListNameWidthGet())
+                if (Math.Abs(value - LocalityListViewService.ServerListNameWidthGet()) > 0.001)
                 {
                     LocalityListViewService.ServerListNameWidthSet(value);
                     RaisePropertyChanged();
@@ -215,7 +215,7 @@ namespace _1RM.View.ServerList
             get => LocalityListViewService.ServerListNoteWidthGet();
             set
             {
-                if (value != LocalityListViewService.ServerListNoteWidthGet())
+                if (Math.Abs(value - LocalityListViewService.ServerListNoteWidthGet()) > 0.001)
                 {
                     LocalityListViewService.ServerListNoteWidthSet(value);
                     RaisePropertyChanged();
@@ -599,6 +599,27 @@ namespace _1RM.View.ServerList
         {
             // select save to which source
             var source = DataSourceSelectorViewModel.SelectDataSource();
+            if (source == null)
+            {
+                return new Tuple<DataSourceBase?, string?>(null, null);
+            }
+            if (source?.IsWritable != true)
+            {
+                MessageBoxHelper.ErrorAlert($"Can not add server to DataSource ({source?.DataSourceName ?? "null"}) since it is not writable.");
+                return new Tuple<DataSourceBase?, string?>(null, null);
+            }
+            // select file with filter
+            if (this.View is ServerListPageView view)
+                view.CbPopForInExport.IsChecked = false;
+            var path = SelectFileHelper.OpenFile(title: IoC.Translate("import_server_dialog_title"), filter: filter);
+            return path == null ? new Tuple<DataSourceBase?, string?>(null, null) : new Tuple<DataSourceBase?, string?>(source, path);
+        }
+
+
+        private async Task<Tuple<DataSourceBase?, string?>> GetImportParamsAsync(string filter)
+        {
+            // select save to which source
+            var source = await DataSourceSelectorViewModel.SelectDataSourceAsync();
             if (source == null)
             {
                 return new Tuple<DataSourceBase?, string?>(null, null);

@@ -11,8 +11,10 @@ using _1RM.Model.ProtocolRunner;
 using _1RM.Model.ProtocolRunner.Default;
 using _1RM.Service.Locality;
 using _1RM.Utils;
+using _1RM.View;
 using _1RM.View.Editor;
 using _1RM.View.Host;
+using _1RM.View.Utils;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Stylet;
@@ -36,7 +38,7 @@ namespace _1RM.Service
             if (RetryHelper.Try(() =>
                 {
                     File.WriteAllText(rdpFile, text);
-                }, actionOnError: exception => SentryIoHelper.Error(exception)))
+                }, actionOnError: exception => MsAppCenterHelper.Error(exception)))
             {
                 // delete tmp rdp file, ETA 30s
                 Task.Factory.StartNew(() =>
@@ -71,7 +73,7 @@ namespace _1RM.Service
                 }
                 catch (Exception e)
                 {
-                    SentryIoHelper.Error(e);
+                    MsAppCenterHelper.Error(e);
                     MessageBoxHelper.ErrorAlert(e.Message + "\r\n while Run mstsc.exe");
                 }
             }
@@ -91,7 +93,7 @@ namespace _1RM.Service
             if (RetryHelper.Try(() =>
             {
                 File.WriteAllText(rdpFile, text);
-            }, actionOnError: exception => SentryIoHelper.Error(exception)))
+            }, actionOnError: exception => MsAppCenterHelper.Error(exception)))
             {
                 var p = new Process
                 {
@@ -184,6 +186,10 @@ namespace _1RM.Service
 
             #region prepare
 
+            // trace source view
+            if (string.IsNullOrEmpty(fromView) == false)
+                MsAppCenterHelper.TraceSessionOpen(protocol.Protocol, fromView);
+
             // connect count save to config
             _configurationService.Engagement.ConnectCount++;
             _configurationService.Save();
@@ -222,49 +228,52 @@ namespace _1RM.Service
             if (protocolClone is ProtocolBaseWithAddressPortUserPwd { AskPasswordWhenConnect: true } pb)
             {
                 bool flag = false;
+                var pwdDlg = new PasswordPopupDialogViewModel(protocolClone is SSH or SFTP)
+                {
+                    Title = $"[{pb.ProtocolDisplayName}]({pb.DisplayName}) -> {pb.Address}:{pb.Port}",
+                    UserName = pb.UserName
+                };
+                if (pb.UsePrivateKeyForConnect == true)
+                {
+                    pwdDlg.CanUsePrivateKeyForConnect = true;
+                    pwdDlg.UsePrivateKeyForConnect = true;
+                    pwdDlg.PrivateKey = pb.PrivateKey;
+                }
+                else
+                {
+                    pwdDlg.UsePrivateKeyForConnect = false;
+                    pwdDlg.Password = pb.Password;
+                }
+
                 Execute.OnUIThreadSync(() =>
                 {
-                    var pwdDlg = new PasswordPopupDialogViewModel(protocolClone is SSH or SFTP)
-                    {
-                        Title = $"[{pb.ProtocolDisplayName}]({pb.DisplayName}) -> {pb.Address}:{pb.Port}",
-                        UserName = pb.UserName
-                    };
-                    if (pb.UsePrivateKeyForConnect == true)
-                    {
-                        pwdDlg.CanUsePrivateKeyForConnect = true;
-                        pwdDlg.UsePrivateKeyForConnect = true;
-                        pwdDlg.PrivateKey = pb.PrivateKey;
-                    }
-                    else
-                    {
-                        pwdDlg.UsePrivateKeyForConnect = false;
-                        pwdDlg.Password = pb.Password;
-                    }
-
-                    if (IoC.Get<IWindowManager>().ShowDialog(pwdDlg) == true)
-                    {
-                        flag = true;
-                        pb.UserName = pwdDlg.UserName;
-                        if (pwdDlg.UsePrivateKeyForConnect)
-                        {
-                            pb.UsePrivateKeyForConnect = true;
-                            pb.Password = "";
-                            pb.PrivateKey = pwdDlg.PrivateKey;
-                        }
-                        else
-                        {
-                            pb.UsePrivateKeyForConnect = false;
-                            pb.PrivateKey = "";
-                            pb.Password = pwdDlg.Password;
-                        }
-                        pwdDlg.PrivateKey = "";
-                        pwdDlg.Password = "";
-                    }
-                    else
-                    {
-                        pwdDlg.Password = "";
-                    }
+                    MaskLayerController.ShowWindowWithMask(pwdDlg);
                 });
+
+                if (await pwdDlg.WaitDialogResult() == true)
+                {
+                    flag = true;
+                    pb.UserName = pwdDlg.UserName;
+                    if (pwdDlg.UsePrivateKeyForConnect)
+                    {
+                        pb.UsePrivateKeyForConnect = true;
+                        pb.Password = "";
+                        pb.PrivateKey = pwdDlg.PrivateKey;
+                    }
+                    else
+                    {
+                        pb.UsePrivateKeyForConnect = false;
+                        pb.PrivateKey = "";
+                        pb.Password = pwdDlg.Password;
+                    }
+                    pwdDlg.PrivateKey = "";
+                    pwdDlg.Password = "";
+                }
+                else
+                {
+                    pwdDlg.Password = "";
+                }
+
 
                 if (flag == false)
                 {
